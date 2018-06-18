@@ -6,17 +6,20 @@ export default {
   devtool: 'cheap-eval-source-map',
   entry: [
     'webpack/hot/dev-server',
-    'webpack-hot-middleware/client',
+    'webpack-hot-middleware/client?reload=true&noinfo=true',
     './app/app.js',
   ],
   output: {
-    path: path.resolve(__dirname, '..', 'dist'),
+    path: path.resolve(process.cwd(), 'public', 'js'),
     publicPath: '/js/',
     filename: 'app.js',
   },
+  resolve: {
+    extensions: ['.js', '.json', '.jsx']
+  },
   module: {
     rules: [
-      { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" },
+      { test: /\.js[x]?$/, exclude: /node_modules/, loader: "babel-loader" },
     ],
   },
   plugins: [

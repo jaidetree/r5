@@ -13,7 +13,7 @@ gulp.task('serve', () => {
     open: false,
     server: {
       baseDir: 'public',
-      middlware: [
+      middleware: [
         webpackDevMiddleware(bundler, {
           publicPath: webpackConfig.output.publicPath,
           stats: { colors: true },
