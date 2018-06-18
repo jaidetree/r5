@@ -37,9 +37,6 @@ export default class App extends React.Component {
       <RouterContext.Provider value={this.state.router}>
         <Provider store={this.state.store}>
           <div className="page">
-            <h1>
-              R5 Todos App
-            </h1>
             <Todos />
           </div>
         </Provider>

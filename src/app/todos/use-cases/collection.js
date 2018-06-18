@@ -43,6 +43,10 @@ export function removeTask (id) {
   return { type: actions.REMOVE_TODO, data: id };
 }
 
+export function updateTask (data) {
+  return { type: actions.UPDATE_TODO, data };
+}
+
 // Epic
 // ---------------------------------------------------------------------------
 function initEpic (action$) {
