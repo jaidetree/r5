@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "task": "Discover R5",
+    "completed": false
+  }
+  {
+    "id": 2,
+    "task": "Read docs",
+    "completed": false
+  },
+  {
+    "id": 3,
+    "task": "Clone repo",
+    "completed": false
+  },
+  {
+    "id": 4,
+    "task": "Run docker-compose up",
+    "completed": false
+  }
+]

@@ -1,15 +1,18 @@
 import { fromEvent, BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g;
 
 // createRouter :: { a } -> { route$: Observable, navigate: (String, { b }) -> void, unsubscribe: () -> void }
-export default function createRouter (config) {
+export function createRouter (config) {
   // $ denotes "stream"
   const route$ = new BehaviorSubject(getURL());
 
   // $$ denotes "stream subscription"
   const popstate$$ = fromEvent(window, 'popstate')
-    .map(getURL)
+    .pipe(
+      map(getURL),
+    )
     .subscribe(url => route$.next(url));
 
   return {
@@ -22,15 +25,6 @@ export default function createRouter (config) {
       popstate$$.unsubscribe();
       return route$.unsubscribe();
     },
-  };
-}
-
-// getURL :: () -> { path: String, query: string }
-// Return a plain javascript object with path and query data.
-function getURL () {
-  return {
-    path: window.location.pathname,
-    query: window.location.search,
   };
 }
 
@@ -61,6 +55,16 @@ export function route (routes) {
     // we only care about the first match in so far
     |> R.slice(0, 1)
     |> R.map(route => route.handler(getArgsFromURL(url, route)));
+}
+
+
+// getURL :: () -> { path: String, query: string }
+// Return a plain javascript object with path and query data.
+function getURL () {
+  return {
+    path: window.location.pathname,
+    query: window.location.search,
+  };
 }
 
 // matchAll :: (RegExp, String) -> [ String ]
