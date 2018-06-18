@@ -1,5 +1,5 @@
-import { combineEpics, combineReducers } from '../lib/useCase';
-import * as todos from './todos';
+import { combineReducers, combineEpics } from 'lib/useCase';
+import * as todos from 'app/todos/use-cases';
 
 export const reducer = combineReducers({
   todos: todos.reducer,

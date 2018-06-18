@@ -13,7 +13,9 @@ import {
 } from 'ramda';
 
 const getKey = curry(function getKey (key, action) {
-  return action[key] || action.data[key];
+  const value = action[key] || action.data[key] || action.data;
+
+  return key === 'id' ? Number(value) : value;
 });
 
 export function updateUsingKey (key, fn, addIfNonExistent) {
@@ -62,10 +64,7 @@ export function mergeDeepByKey (key) {
 export const mergeDeepById = mergeDeepByKey('id');
 
 export function removeByKey (key) {
-  return (state, action) => reject(propEq(
-    key,
-    getKey(key, data)
-  ), state);
+  return (state, action) => reject(propEq(key, getKey(key, action)), state);
 }
 
 export const removeById = removeByKey('id');

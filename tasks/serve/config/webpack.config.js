@@ -7,7 +7,7 @@ export default {
   entry: [
     'webpack/hot/dev-server',
     'webpack-hot-middleware/client?reload=true&noinfo=true',
-    './app/app.js',
+    './src/app/app.js',
   ],
   output: {
     path: path.resolve(process.cwd(), 'public', 'js'),
@@ -15,7 +15,11 @@ export default {
     filename: 'app.js',
   },
   resolve: {
-    extensions: ['.js', '.json', '.jsx']
+    extensions: ['.js', '.json', '.jsx'],
+    modules: [
+      path.resolve(process.cwd(), 'src'),
+      'node_modules',
+    ]
   },
   module: {
     rules: [

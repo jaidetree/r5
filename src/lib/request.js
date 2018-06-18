@@ -1,10 +1,9 @@
 import { curry, mergeDeepRight as merge } from 'ramda';
 import { ajax } from 'rxjs/ajax';
+import { tap } from 'rxjs/operators';
 
-export const GET = curry(function GET (url, data, headers={}) {
-  return ajax.getJSON(url, merge(headers, {
-    'content-type': 'application/json',
-  }));
+export const GET = curry(function GET (url, headers={}) {
+  return ajax.getJSON(url, headers);
 });
 
 export const PATCH = curry(function PATCH (url, data, headers={}) {

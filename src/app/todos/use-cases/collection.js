@@ -1,28 +1,32 @@
 import { map as amap, when, propEq, assoc, filter } from 'ramda';
 import { map, flatMap, tap } from 'rxjs/operators';
+import * as todos from 'app/todos/api';
 
 import {
   createAction,
   createReducer,
   combineEpics,
   reducers,
-} from '../lib/useCase';
+} from 'lib/useCase';
 
-import { INITIALIZE } from '../store/actions';
+import { INITIALIZE } from 'app/main/store/initialize';
 
 // Actions
 // ---------------------------------------------------------------------------
 export const actions = {
+  COMPLETE_TODO: 'todos/complete',
+  CREATE_TODO: 'todos/create',
   FETCH_TODOS: 'todos/fetch',
+  REMOVE_TODO: 'todos/remove',
   SET_TODOS: 'todos/set',
   UPDATE_TODO: 'todos/update',
-  COMPLETE_TODO: 'todos/complete',
 };
 
 // Reducer
 // ---------------------------------------------------------------------------
 export const reducer = createReducer([], {
   [actions.SET_TODOS]: reducers.set,
+  [actions.CREATE_TODO]: reducers.prepend,
   [actions.UPDATE_TODO]: reducers.mergeById,
   [actions.REMOVE_TODO]: reducers.removeById,
   [actions.COMPLETE_TODO]: (state, action) =>
@@ -31,6 +35,13 @@ export const reducer = createReducer([], {
       assoc('complete', true),
     )),
 });
+
+// Action Creators
+// ---------------------------------------------------------------------------
+
+export function removeTask (id) {
+  return { type: actions.REMOVE_TODO, data: id };
+}
 
 // Epic
 // ---------------------------------------------------------------------------
@@ -46,7 +57,7 @@ function fetchEpic (action$, state$, { request }) {
   return action$
     .ofType(actions.FETCH_TODOS)
     .pipe(
-      flatMap(request.GET('/data/todos.json')),
+      flatMap(todos.fetch),
       map(createAction(actions.SET_TODOS))
     );
 }
