@@ -24,7 +24,8 @@ export const actions = {
 
 // Reducer
 // ---------------------------------------------------------------------------
-export const reducer = createReducer([], {
+export const reducer = createReducer({
+  init: [],
   [actions.SET_TODOS]: reducers.set,
   [actions.CREATE_TODO]: reducers.prepend,
   [actions.UPDATE_TODO]: reducers.mergeById,

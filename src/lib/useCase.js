@@ -16,14 +16,15 @@ export const createAction = curry(function createAction (type, data, ...args) {
   };
 });
 
-// createReducer :: (a, { String: ({ State }, { Action }) -> { State }})
+// createReducer :: ({ String: ({ State }, { Action }) -> { State }})
 // Generate a reducer that maps action types to simple reducer functions
-export function createReducer (initial, handlers) {
+export function createReducer (handlers) {
   return (state, action) => {
     if (handlers[action.type]) {
       return handlers[action.type](state, action);
     }
 
-    return typeof state === 'undefined' ? initial : state;
+    // if state is new then return initial value in handlers object
+    return typeof state === 'undefined' ? handlers.init : state;
   };
 }

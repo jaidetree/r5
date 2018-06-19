@@ -11,9 +11,11 @@ import {
   mergeDeepRight,
   prop,
   propEq,
+  reduce,
   reject,
   T,
   tap,
+  uniq,
   update,
 } from 'ramda';
 
@@ -230,7 +232,7 @@ export function prepend (state, action) {
 }
 
 /**
- * inKey :: String -> ({ State , { Action }) -> { State } -> { State }}
+ * inKey :: String -> (({ a , { data: a }) -> { a }) -> ({ a }, { data: { a }) -> { a }
  * Combinator to apply any above reducers to a particular property of a state
  * object.
  * Example:
@@ -239,4 +241,26 @@ export function prepend (state, action) {
  */
 export function inKey (key, reducer) {
   return (state, action) => assoc(key, reducer(state[key], action), state);
+}
+
+/**
+ * unique :: ([ a ], _) -> [ a ]
+ * Enforce unique values in state
+ * Example:
+ * unique([ 1, 2, 3, 3, ], _) -> [ 1, 2, 3 ]
+ */
+export function unique (state, _) {
+  return uniq(state);
+}
+
+/**
+ * pipe :: (...[ (a, { data: a }) -> a ]) -> (a, { data: a }) -> a
+ * Combines reducers together to form a super reducer
+ * Example:
+ * pipe(append, unique)([ 1, 2, 3], { data: [ 3 ] })
+ * // => [ 1, 2, 3 ]
+ */
+export function pipe (...reducers) {
+  return (state, action) => reducers
+    |> reduce((state, reducer) => reducer(state, action), state);
 }

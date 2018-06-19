@@ -249,4 +249,31 @@ describe("Reducers", () => {
       });
     });
   });
+
+  describe(".unique", () => {
+    test("it should remove duplicates from a list", () => {
+      const state = [ 1, 2, 3, 3 ];
+      const action = { data: 5 };
+
+      expectEqual(reducers.unique(state, action), [
+        1,
+        2,
+        3,
+      ]);
+    });
+  });
+
+  describe(".pipe", () => {
+    test("it should combine two unrelated reducers together", () => {
+      const state = [ 1, 2, 3, 3 ];
+      const action = { data: 4 };
+
+      expectEqual(reducers.pipe(reducers.append, reducers.unique)(state, action), [
+        1,
+        2,
+        3,
+        4,
+      ]);
+    });
+  });
 });
