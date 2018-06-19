@@ -1,6 +1,13 @@
-import { prop, unary } from 'ramda';
+import { prop, replace, unary } from 'ramda';
 import { argv } from 'yargs';
+import path from 'path';
 import Stream from 'highland';
+
+function formatTaskFile (taskName) {
+  const fileName = replace(/:/g, '/', taskName);
+
+  return `./${fileName}/${path.basename(fileName)}.task.js`;
+}
 
 
 // Get the gulp tasks from argv._ and require them
@@ -9,5 +16,5 @@ import Stream from 'highland';
 argv
   |> Stream.of
   |> Stream.flatMap(prop('_'))
-  |> Stream.map(taskName => `./${taskName}/${taskName}.task.js`)
+  |> Stream.map(formatTaskFile)
   |> Stream.each(unary(require));
