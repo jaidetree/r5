@@ -5,19 +5,18 @@ import gulp from 'gulp';
 import jest from 'jest-cli';
 import jestConfig from '../config/jest.config.js';
 
-gulp.task('test:unit', () => {
-  return jest
-    .runCLI(jestConfig, [ jestConfig.rootDir ])
-    |> Stream
-    |> Stream.pluck('results')
-    |> Stream.filter(R.either(
-      R.prop('numFailedTests'),
-      R.prop('numFailedTestSuites'),
-    ))
-    |> Stream.flatMap(R.pipe(
-      R.always("Tests failed"),
-      R.construct(PluginError),
-      Stream.fromError,
-    ))
-    |> Stream.toNodeStream({ objectMode: true });
-});
+gulp.task('test:unit', () => jest
+  .runCLI(jestConfig, [ jestConfig.rootDir ])
+  |> Stream
+  |> Stream.pluck('results')
+  |> Stream.filter(R.either(
+    R.prop('numFailedTests'),
+    R.prop('numFailedTestSuites'),
+  ))
+  |> Stream.flatMap(R.pipe(
+    R.always("Tests failed"),
+    R.construct(PluginError),
+    Stream.fromError,
+  ))
+  |> Stream.toNodeStream({ objectMode: true })
+);
