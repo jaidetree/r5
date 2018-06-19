@@ -36,7 +36,7 @@ describe('router', () => {
       const router = Router.createRouter(config);
       const popstateEvent = new window.Event("popstate", { bubbles: true });
 
-      const results = router.route$
+      const promise = router.route$
         .skip(1)
         .take(1)
         .toPromise()
@@ -50,7 +50,27 @@ describe('router', () => {
       config.location.pathname = '/test-path/';
       document.dispatchEvent(popstateEvent);
 
-      return results;
+      return promise;
+    });
+
+    test('reacts to navigate calls', () => {
+      let config = createConfig();
+      const router = Router.createRouter(config);
+
+      const promise = router.route$
+        .skip(1)
+        .take(1)
+        .toPromise()
+        .then(uri => {
+          expect(uri).toEqual({
+            path: '/test-path/',
+            query: { id: 1 },
+          });
+        });
+
+      router.navigate('/test-path/?id=1');
+
+      return promise;
     });
   });
 

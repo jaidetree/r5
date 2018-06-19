@@ -23,9 +23,14 @@ export function createRouter (config) {
 
   return {
     route$,
-    navigate (url, opts) {
-      history.pushState(opts.data || null, opts.title || null, url);
-      return route$.next(url);
+    navigate (uri, opts={}) {
+      const [ path, queryString='' ] = uri.split('?');
+
+      history.pushState(opts.data || null, opts.title || null, uri);
+      return route$.next({
+        path,
+        query: parseQueryString(queryString),
+      });
     },
     unsubscribe () {
       popstate$$.unsubscribe();
