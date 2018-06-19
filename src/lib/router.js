@@ -1,3 +1,4 @@
+import * as R from 'ramda';
 import { fromEvent, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -57,6 +58,23 @@ export function route (routes) {
     |> R.map(route => route.handler(getArgsFromURL(url, route)));
 }
 
+// parseQueryString :: String -> { String: * }
+// Parses a query string into an object including nested JSON objects.
+export function parseQueryString (qs) {
+  return qs
+    |> R.replace(/^\?/, '')
+    |> R.split('&')
+    |> R.map(R.pipe(
+      R.split('='),
+      R.map(decodeURIComponent),
+      R.cond([
+        [ R.propEq(1, 'true'), R.update(1, true) ],
+        [ R.propEq(1, 'false'), R.update(1, false) ],
+        [ R.propSatisfies(isJSON, 1), JSON.parse ],
+        [ R.propSatisfies(R.test(/^\d+(\.\d+)?$/), 1), Number ],
+      ]),
+    ));
+}
 
 // getURL :: () -> { path: String, query: string }
 // Return a plain javascript object with path and query data.
@@ -94,4 +112,15 @@ function parseArgs (patternStr) {
   return patternStr
     |> R.match(ARG_PATTERN)
     |> R.map(R.slice(2));
+}
+
+// isJSON :: String -> Boolean
+// Returns true if a string appears to be a JSON string like "{\"a\":1}"
+function isJSON (str) {
+  return str
+    |> R.trim
+    |> R.either(
+      R.both(R.startsWith('['), R.endsWith(']')),
+      R.both(R.startsWith('{'), R.endsWith('}')),
+    );
 }

@@ -1,2 +1,3 @@
-import build from './build';
-import serve from './serve';
+import './build';
+import './serve';
+import './test';
