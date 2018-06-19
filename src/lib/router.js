@@ -3,6 +3,7 @@ import { fromEvent, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g;
+const NUM_PATTERN = /^\d+(\.\d+)?$/g;
 
 // createRouter :: { a } -> { route$: Observable, navigate: (String, { b }) -> void, unsubscribe: () -> void }
 export function createRouter (config) {
@@ -33,39 +34,30 @@ export function createRouter (config) {
       });
     },
     unsubscribe () {
+      route$.complete();
       popstate$$.unsubscribe();
       return route$.unsubscribe();
     },
   };
 }
 
-// parseRoutes :: { string: (...*) -> React.Node } -> Route => { pattern: RegExp, args: [ String ], handler: (...*) -> React.Node }
+// parseRoutes :: { String: String } -> { pattern: RegExp, args: [ String ], route: { route } }
 // Parse a map of routes into an array of objects containing the parsed regex
 // & args array
 export function parseRoutes (routes) {
   return routes
     |> R.toPairs
-    |> R.map(([ patternStr, handler ]) => ({
+    |> R.map(([ patternStr, name ]) => ({
       pattern: parsePattern(patternStr),
       args: parseArgs(patternStr),
-      handler,
+      name,
     }));
 }
 
-// isRoute :: (String, Route) -> Boolean
+// isRoute :: ({ path: String, queryString: { a }}, { name: String, args: [ String ], pattern: RegExp }) -> Boolean
 // Determine if a route object matches a given url.
-export function isRoute (url, route) {
-  return route.pattern.test(url);
-}
-
-// route :: { string: (...*) -> React.Node } -> String -> [ React.Node ]
-// Return a map function to match a uri with a view
-export function route (routes) {
-  return url => parseRoutes(routes)
-    |> R.filter(route => isRoute(url, route))
-    // we only care about the first match in so far
-    |> R.slice(0, 1)
-    |> R.map(route => route.handler(getArgsFromURL(url, route)));
+export function isRoute (route, handler) {
+  return handler.pattern.test(route.path);
 }
 
 // parseQueryString :: String -> { String: * }
@@ -81,12 +73,21 @@ export function parseQueryString (qs) {
         [ R.propEq(1, 'true'), R.update(1, true) ],
         [ R.propEq(1, 'false'), R.update(1, false) ],
         [ R.propSatisfies(isJSON, 1), R.adjust(JSON.parse, 1) ],
-        [ R.propSatisfies(R.test(/^\d+(\.\d+)?$/), 1), R.adjust(Number, 1) ],
+        [ R.propSatisfies(R.test(NUM_PATTERN), 1), R.adjust(Number, 1) ],
         [ R.T, R.identity ],
       ]),
     ))
     |> R.filter(R.head)
     |> R.fromPairs;
+}
+
+// getArgsFromURL :: String -> Route
+// Return an object with the arguments parsed
+export function getArgsFromURL (url, route) {
+  return matchAll(route.pattern, url)
+    |> R.drop(1)
+    |> R.map(R.when(R.test(NUM_PATTERN), Number))
+    |> R.zipObj(route.args);
 }
 
 // getURLFromLocation :: ({ pathname: String, search: String }) -> { path: String, query: string }
@@ -96,35 +97,6 @@ function getURLFromLocation (location) {
     path: location.pathname,
     query: parseQueryString(location.search),
   };
-}
-
-// matchAll :: (RegExp, String) -> [ String ]
-function matchAll (pattern, str) {
-  return [].concat(new RegExp(pattern).exec(str) || []);
-}
-
-// getArgsFromURL :: String -> Route
-// Return an object with the arguments parsed
-function getArgsFromURL (url, route) {
-  return matchAll(route.pattern, url)
-    |> R.slice(1)
-    |> R.reduce((args, value, i) => R.assoc(route.args[i], value, args), {});
-}
-
-// parsePattern :: String -> RegExp
-// Return a RegExp from a pattern string with :arg_name
-function parsePattern (patternStr) {
-  return patternStr
-    |> R.replace(ARG_PATTERN, '\/([^\/]+)')
-    |> (str => new RegExp(str, 'gi'));
-}
-
-// parseArgs :: String -> [ String ]
-// Return an array of argument names to construct an object with later
-function parseArgs (patternStr) {
-  return patternStr
-    |> R.match(ARG_PATTERN)
-    |> R.map(R.slice(2));
 }
 
 // isJSON :: String -> Boolean
@@ -137,4 +109,28 @@ function isJSON (str) {
       R.both(R.startsWith('['), R.endsWith(']')),
       R.both(R.startsWith('{'), R.endsWith('}')),
     );
+}
+
+// matchAll :: (RegExp, String) -> [ String ]
+// Returns all subgroup matches using a single pattern.
+function matchAll (pattern, str) {
+  const matches = pattern.exec(str);
+
+  return matches === null ? [] : matches.concat(matchAll(pattern, str));
+ }
+
+// parseArgs :: String -> [ String ]
+// Return an array of argument names to construct an object with later
+function parseArgs (patternStr) {
+  return patternStr
+    |> R.match(ARG_PATTERN)
+    |> R.map(R.drop(2));
+}
+
+// parsePattern :: String -> RegExp
+// Return a RegExp from a pattern string with :arg_name
+function parsePattern (patternStr) {
+  return patternStr
+    |> R.replace(ARG_PATTERN, '\/([^\/]+)')
+    |> (str => new RegExp(str, 'gi'));
 }

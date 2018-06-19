@@ -1,4 +1,5 @@
 import path from 'path';
+import { argv } from 'yargs';
 
 export default {
   name: "r5",
@@ -7,5 +8,5 @@ export default {
   rootDir: process.cwd(),
   testMatch: ["**/**.test.js"],
   transform: ['babel-jest'],
-  watchAll: true,
+  watchAll: argv.watch || false,
 }
