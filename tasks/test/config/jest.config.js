@@ -7,4 +7,5 @@ export default {
   rootDir: process.cwd(),
   testMatch: ["**/**.test.js"],
   transform: ['babel-jest'],
+  watchAll: true,
 }

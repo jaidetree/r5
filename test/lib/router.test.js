@@ -1,10 +1,24 @@
-import { Observable } from 'rxjs';
+import * as Rx from 'rxjs/Rx';
 import * as Router from 'lib/router';
+
+function createConfig (props) {
+  return {
+    window: window,
+    location: {
+      pathname: '/',
+      search: '',
+    },
+    history: {
+      pushState: jest.fn(),
+    },
+    ...props,
+  };
+}
 
 describe('router', () => {
   describe('.createRouter', () => {
     test('returns an object', () => {
-      const router = Router.createRouter({})
+      const router = Router.createRouter(createConfig());
 
       expect(Object.keys(router))
         .toEqual([
@@ -12,15 +26,39 @@ describe('router', () => {
           'navigate',
           'unsubscribe'
         ]);
-      expect(router.route$).toBeInstanceOf(Observable)
+      expect(router.route$).toBeInstanceOf(Rx.Observable)
       expect(router.navigate).toBeInstanceOf(Function);
       expect(router.unsubscribe).toBeInstanceOf(Function);
     })
+
+    test('reacts to popstate events', () => {
+      let config = createConfig();
+      const router = Router.createRouter(config);
+      const popstateEvent = new window.Event("popstate", { bubbles: true });
+
+      const results = router.route$
+        .skip(1)
+        .take(1)
+        .toPromise()
+        .then(uri => {
+          expect(uri).toEqual({
+            path: '/test-path/',
+            query: {},
+          });
+        });
+
+      config.location.pathname = '/test-path/';
+      document.dispatchEvent(popstateEvent);
+
+      return results;
+    });
   });
 
   describe('.parseQueryString', () => {
     test('returns an object', () => {
-      expect(Router.parseQueryString('?id=1&is_true=true&is_false=false&list=[1,2,3]')).toEqual({
+      const qs = "?id=1&is_true=true&is_false=false&list=[1,2,3]";
+
+      expect(Router.parseQueryString(qs)).toEqual({
         id: 1,
         is_true: true,
         is_false: false,

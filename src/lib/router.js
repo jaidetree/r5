@@ -6,7 +6,9 @@ const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g;
 
 // createRouter :: { a } -> { route$: Observable, navigate: (String, { b }) -> void, unsubscribe: () -> void }
 export function createRouter (config) {
+  const window = config.window || window;
   const location = config.location || window.location;
+  const history = config.history || window.history;
   const getURL = R.partial(getURLFromLocation, [ location ]);
 
   // $ denotes "stream"
@@ -22,7 +24,7 @@ export function createRouter (config) {
   return {
     route$,
     navigate (url, opts) {
-      window.history.pushState(opts.data || null, opts.title || null, url);
+      history.pushState(opts.data || null, opts.title || null, url);
       return route$.next(url);
     },
     unsubscribe () {
@@ -78,6 +80,7 @@ export function parseQueryString (qs) {
         [ R.T, R.identity ],
       ]),
     ))
+    |> R.filter(R.head)
     |> R.fromPairs;
 }
 
