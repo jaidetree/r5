@@ -40,15 +40,17 @@ const lookupKey = curry(function lookupKey (key, action) {
  * updateUsingKey('id', R.identity)({ a: 1 }, { data: { b: 2 } })
  * // => { a: 1 }
  */
-function updateUsingKey (key, fn, addIfNonExistent) {
+function updateUsingKey (key, fn, shouldAdd) {
   return (state, action) => {
-    const index = findIndex(propEq('id', lookupKey(key, action)), state);
+    const index = findIndex(propEq(key, lookupKey(key, action)), state);
 
-    if (index === -1 && !addIfNonExistent) {
+    // Item does not exist in collection just return state
+    if (index === -1 && !shouldAdd) {
       return state;
     }
 
-    if (index === -1 && addIfNonExistent) {
+    // Item does not exist but we should add it to the collection, append it
+    if (index === -1 && shouldAdd) {
       return state.concat(action.data);
     }
 
@@ -127,7 +129,7 @@ export function mergeByKey (key) {
 }
 
 /**
- * mergeById :: ([ { a  ], { data: * }) -> [ { a } ]}
+ * mergeById :: ([ { a }, { data: * }) -> [ { a } ]}
  * Shallow merge action.data into collection where action.data.id is found
  * Example:
  * mergeById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
@@ -136,10 +138,10 @@ export function mergeByKey (key) {
 export const mergeById = mergeByKey('id');
 
 /**
- * mergeDeepByKey :: String -> ([ { a  ], { data: * }) -> [ { a } ]}
+ * mergeDeepByKey :: String -> ([ { a }, { data: * }) -> [ { a } ]}
  * Merges action.data[key] into a collection if element is found within.
  * Example:
- * mergeDeepBy('id')([ { id: 1, a: 1 }], { data: { id: 1, b: 2 } })
+ * mergeDeepBy('id')([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
 export function mergeDeepByKey (key) {
@@ -150,7 +152,7 @@ export function mergeDeepByKey (key) {
  * mergeDeepById :: ([ { a  ], { data: * }) -> [ { a } ]}
  * Merges action.data into a collection where action.data.id is found within.
  * Example:
- * mergeDeepById([ { id: 1, a: 1 }], { data: { id: 1, b: 2 } })
+ * mergeDeepById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
 export const mergeDeepById = mergeDeepByKey('id');
