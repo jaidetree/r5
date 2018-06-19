@@ -6,6 +6,9 @@ const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g;
 
 // createRouter :: { a } -> { route$: Observable, navigate: (String, { b }) -> void, unsubscribe: () -> void }
 export function createRouter (config) {
+  const location = config.location || window.location;
+  const getURL = R.partial(getURLFromLocation, [ location ]);
+
   // $ denotes "stream"
   const route$ = new BehaviorSubject(getURL());
 
@@ -70,18 +73,20 @@ export function parseQueryString (qs) {
       R.cond([
         [ R.propEq(1, 'true'), R.update(1, true) ],
         [ R.propEq(1, 'false'), R.update(1, false) ],
-        [ R.propSatisfies(isJSON, 1), JSON.parse ],
-        [ R.propSatisfies(R.test(/^\d+(\.\d+)?$/), 1), Number ],
+        [ R.propSatisfies(isJSON, 1), R.adjust(JSON.parse, 1) ],
+        [ R.propSatisfies(R.test(/^\d+(\.\d+)?$/), 1), R.adjust(Number, 1) ],
+        [ R.T, R.identity ],
       ]),
-    ));
+    ))
+    |> R.fromPairs;
 }
 
-// getURL :: () -> { path: String, query: string }
+// getURLFromLocation :: ({ pathname: String, search: String }) -> { path: String, query: string }
 // Return a plain javascript object with path and query data.
-function getURL () {
+function getURLFromLocation (location) {
   return {
-    path: window.location.pathname,
-    query: window.location.search,
+    path: location.pathname,
+    query: parseQueryString(location.search),
   };
 }
 
@@ -118,6 +123,7 @@ function parseArgs (patternStr) {
 // Returns true if a string appears to be a JSON string like "{\"a\":1}"
 function isJSON (str) {
   return str
+    |> R.defaultTo('')
     |> R.trim
     |> R.either(
       R.both(R.startsWith('['), R.endsWith(']')),

@@ -5,6 +5,7 @@ VOLUME /var/app
 ADD package.json yarn.lock ./
 
 RUN yarn install
+RUN yarn global add gulp
 
 WORKDIR /var/app
 
