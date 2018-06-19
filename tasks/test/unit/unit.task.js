@@ -5,10 +5,6 @@ import gulp from 'gulp';
 import jest from 'jest-cli';
 import jestConfig from '../config/jest.config.js';
 
-function errorFactory (message) {
-  return () => new PluginError('jest', { message });
-}
-
 gulp.task('test:unit', () => {
   return jest
     .runCLI(jestConfig, [ jestConfig.rootDir ])
@@ -19,7 +15,8 @@ gulp.task('test:unit', () => {
       R.prop('numFailedTestSuites'),
     ))
     |> Stream.flatMap(R.pipe(
-      errorFactory('Tests failed'),
+      R.always("Tests failed"),
+      R.construct(PluginError),
       Stream.fromError,
     ))
     |> Stream.toNodeStream({ objectMode: true });
