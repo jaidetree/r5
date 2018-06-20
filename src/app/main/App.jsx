@@ -14,9 +14,12 @@ import * as request from 'lib/request';
 
 import Router from './containers/Router';
 import Todos from 'app/todos/containers/Todos';
+import routes from 'app/routes';
+import { startRouting } from 'app/main/use-cases/router';
 
 export default class App extends React.Component {
   static displayName = 'App';
+  static routes = routes;
 
   state = {
     router: createRouter({}),
@@ -41,6 +44,7 @@ export default class App extends React.Component {
   }
 
   componentDidMount () {
+    this.state.store.dispatch(startRouting(App.routes));
     this.state.store.dispatch(initialize());
   }
 

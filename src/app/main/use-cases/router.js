@@ -1,7 +1,27 @@
 import {
   always,
   pipe,
+  propEq,
+  pathEq,
 } from 'ramda';
+
+import {
+  of,
+  from,
+} from 'rxjs';
+
+import {
+  combineLatest,
+  filter,
+  flatMap,
+  ignoreElements,
+  map,
+  pluck,
+  switchMap,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs/operators';
 
 import {
   combineEpics,
@@ -11,15 +31,6 @@ import {
   reducers,
 } from 'lib/useCase';
 
-import {
-  filter,
-  ignoreElements,
-  map,
-  pluck,
-  switchMap,
-  tap,
-} from 'rxjs/operators';
-
 import * as Router from 'lib/router';
 
 import { INITIALIZE } from 'app/main/store/initialize';
@@ -27,17 +38,24 @@ import { INITIALIZE } from 'app/main/store/initialize';
 // Actions
 // ---------------------------------------------------------------------------
 export const actions = {
-  NAVIGATE: 'router/url/navigate',
-  ROUTE: 'router/url/route',
   APPEND_VIEW: 'router/views/append',
+  CLEANUP_MODULE: 'router/module/cleanup',
+  INIT_MODULE: 'router/module/init',
+  NAVIGATE: 'router/url/navigate',
+  READY_MODULE: 'router/module/ready',
   REMOVE_VIEW: 'router/views/remove',
+  ROUTE: 'router/url/route',
   START_LOADING: 'router/loading/start',
+  START_ROUTING: 'router/start',
   STOP_LOADING: 'router/loading/stop',
 };
 
 export const ROUTE = actions.ROUTE;
 export const START_LOADING = actions.START_LOADING;
 export const STOP_LOADING = actions.STOP_LOADING;
+export const INIT_MODULE = actions.INIT_MODULE;
+export const READY_MODULE = actions.READY_MODULE;
+export const CLEANUP_MODULE = actions.CLEANUP_MODULE;
 
 // Reducer
 // ---------------------------------------------------------------------------
@@ -78,6 +96,10 @@ export function startLoading (name) {
   return { type: actions.START_LOADING, data: name };
 }
 
+export function startRouting (routes) {
+  return { type: actions.START_ROUTING, data: routes };
+}
+
 export function stopLoading (name) {
   return { type: actions.STOP_LOADING, data: name };
 }
@@ -103,9 +125,43 @@ function navigateEpic (action$, state$, { window, router }) {
     );
 }
 
+function routingEpic (action$) {
+  return action$
+    .ofType(actions.START_ROUTING)
+    .pipe(
+      pluck('data'),
+      map(Router.parseRoutes),
+      combineLatest(action$.ofType(actions.ROUTE).pipe(pluck('data'))),
+      flatMap(([ routes, location ]) => from(routes)
+        .pipe(
+          tap(log('routing to', location)),
+          filter(route => Router.isRoute(route, location)),
+          map(route => ({
+            path: location.path,
+            query: location.query,
+            params: Router.getArgsFromURL(route, location),
+            name: route.name,
+          })),
+        )
+      ),
+      map(createAction(actions.INIT_MODULE)),
+    )
+}
+
+function initModuleEpic (action$) {
+  return action$
+    .ofType(actions.INIT_MODULE)
+    .pipe(
+      pluck('data'),
+      map(createAction(actions.APPEND_VIEW)),
+    );
+}
+
 export const epic = combineEpics(
   initializeEpic,
-  navigateEpic
+  navigateEpic,
+  routingEpic,
+  initModuleEpic,
 );
 
 // Helpers
@@ -122,4 +178,16 @@ export function handleRoute (patternStr, name) {
       name: route.name,
     })),
   );
+}
+
+export function routeEpic (name, epic) {
+  return (action$, ...args) => action$
+    .ofType(INIT_MODULE)
+    .pipe(
+      filter(pathEq([ 'data', 'name' ], name)),
+      switchMap(() => epic(action$, ...args)),
+      takeUntil(action$.ofType(CLEANUP_MODULE).pipe(
+        filter(propEq('data', name)),
+      ))
+    );
 }

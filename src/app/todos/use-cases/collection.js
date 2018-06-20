@@ -1,4 +1,5 @@
 import { map as amap, when, propEq, assoc, filter } from 'ramda';
+import { of } from 'rxjs';
 import { map, flatMap, pluck, tap } from 'rxjs/operators';
 import * as todos from 'app/todos/api';
 import * as Routes from 'app/main/use-cases/router';
@@ -52,11 +53,7 @@ export function updateTask (data) {
 // Epic
 // ---------------------------------------------------------------------------
 function initEpic (action$) {
-  return action$
-    .ofType(INITIALIZE)
-    .pipe(
-      map(createAction(actions.FETCH_TODOS))
-    );
+  return of(createAction(actions.FETCH_TODOS, {}));
 }
 
 function fetchEpic (action$, state$, { request }) {
@@ -68,20 +65,9 @@ function fetchEpic (action$, state$, { request }) {
     );
 }
 
-function routeEpic (action$) {
-  return action$
-    .ofType(Routes.ROUTE)
-    .pipe(
-      pluck('data'),
-      Routes.handleRoute('^/$', 'todos'),
-      map(Routes.appendView)
-    );
-}
-
 export const epic = combineEpics(
   initEpic,
   fetchEpic,
-  routeEpic,
 );
 
 // Selectors
