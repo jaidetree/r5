@@ -1,26 +1,26 @@
 export function expectA (...args) {
   if (args.length === 2) {
-    const [ actual, expected ] = args;
+    const [ actual, expected ] = args
 
-    expect(actual).toBeInstanceOf(expected);
-    return actual;
+    expect(actual).toBeInstanceOf(expected)
+    return actual
   }
 
-  const [ expected ] = args;
+  const [ expected ] = args
 
-  return actual => expectA(actual, expected);
+  return actual => expectA(actual, expected)
 }
 
 export function expectEqual (...args) {
   if (args.length === 2) {
-    const [ actual, expected ] = args;
+    const [ actual, expected ] = args
 
-    expect(actual).toEqual(expected);
+    expect(actual).toEqual(expected)
 
-    return actual;
+    return actual
   }
 
-  const [ expected ] = args;
+  const [ expected ] = args
 
-  return actual => expectEqual(actual, expected);
+  return actual => expectEqual(actual, expected)
 }

@@ -1,4 +1,4 @@
-const methods = ['trace', 'error', 'log'];
+const methods = ["trace", "error", "log"]
 
 /**
  * log :: (String, ...[String]) -> (input, ...args) -> input
@@ -15,28 +15,28 @@ const methods = ['trace', 'error', 'log'];
  */
 export default function log (label, ...extra) {
   return (...args) => {
-    const methodName = methods.includes(extra[0]) ? extra[0] : 'log';
+    const methodName = methods.includes(extra[0]) ? extra[0] : "log"
 
     // only write to console when debugging
     if (window.R5.DEBUG && window && window.console) {
-      console[methodName](label, ...extra, ...args);
+      console[methodName](label, ...extra, ...args)
     }
 
-    return args[0];
-  };
+    return args[0]
+  }
 }
 
 log.spy = function spy (label, fn) {
   return (...input) => {
     if (window.R5.DEBUG && window && window.console) {
-      console.trace(label + '.input', ...input);
+      console.trace(label + ".input", ...input)
     }
-    const output = fn(...input);
+    const output = fn(...input)
 
     if (window.R5.DEBUG && window && window.console) {
-      console.trace(label + '.output', output);
+      console.trace(label + ".output", output)
     }
 
-    return output;
-  };
-};
+    return output
+  }
+}

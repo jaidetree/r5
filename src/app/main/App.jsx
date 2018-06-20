@@ -1,24 +1,24 @@
-import React from 'react';
-import { Provider } from 'react-redux';
+import React from "react"
+import { Provider } from "react-redux"
 
-import { createRouter } from 'lib/router';
-import { RouterContext } from 'app/main/context';
-import createStore from 'app/main/store/index';
+import { createRouter } from "lib/router"
+import { RouterContext } from "app/main/context"
+import createStore from "app/main/store/index"
 
-import { reducer, epic } from './use-cases';
+import { reducer, epic } from "./use-cases"
 
 // @debug
-import { ignoreElements } from 'rxjs/operators';
-import { initialize } from './store/initialize';
-import * as request from 'lib/request';
+import { ignoreElements } from "rxjs/operators"
+import { initialize } from "./store/initialize"
+import * as request from "lib/request"
 
-import Router from './containers/Router';
-import Todos from 'app/todos/containers/Todos';
-import routes from 'app/routes';
-import { startRouting } from 'app/main/use-cases/router';
+import Router from "./containers/Router"
+import Todos from "app/todos/containers/Todos"
+import routes from "app/routes"
+import { startRouting } from "app/main/use-cases/router"
 
 export default class App extends React.Component {
-  static displayName = 'App';
+  static displayName = "App";
   static routes = routes;
 
   state = {
@@ -33,19 +33,19 @@ export default class App extends React.Component {
         request,
         window,
       },
-    });
+    })
 
-    this.setState({ store });
-    window.store = store;
+    this.setState({ store })
+    window.store = store
   }
 
   componentWillUnmount () {
-    this.setState({ router: {}, store: {} });
+    this.setState({ router: {}, store: {} })
   }
 
   componentDidMount () {
-    this.state.store.dispatch(startRouting(App.routes));
-    this.state.store.dispatch(initialize());
+    this.state.store.dispatch(startRouting(App.routes))
+    this.state.store.dispatch(initialize())
   }
 
   render () {

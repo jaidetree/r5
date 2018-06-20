@@ -1,4 +1,4 @@
-import Todos from './todos/containers/Todos';
+import Todos from "./todos/containers/Todos"
 
 export default [
   {

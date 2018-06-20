@@ -2,11 +2,8 @@ import {
   assoc,
   cond,
   curry,
-  either,
   equals,
-  filter,
   findIndex,
-  identity,
   is,
   merge as mergeRight,
   mergeDeepRight,
@@ -15,11 +12,10 @@ import {
   reduce,
   reject,
   T,
-  tap,
   uniq,
   uniqBy,
   update,
-} from 'ramda';
+} from "ramda"
 
 /**
  * lookupKey :: String -> { String: a  -> a}
@@ -31,10 +27,10 @@ import {
  * lookupKey('id', { data: 1 }) // => 1
  */
 const lookupKey = curry(function lookupKey (key, action) {
-  const value = action[key] || action.data[key] || action.data;
+  const value = action[key] || action.data[key] || action.data
 
-  return key === 'id' ? Number(value) : value;
-});
+  return key === "id" ? Number(value) : value
+})
 
 /**
  * updateUsingKey :: String -> ({ State , { Action }) -> { State } -> Boolean -> { State }}
@@ -46,27 +42,27 @@ const lookupKey = curry(function lookupKey (key, action) {
  */
 function updateUsingKey (key, fn, shouldAdd) {
   return (state, action) => {
-    const index = findIndex(propEq(key, lookupKey(key, action)), state);
+    const index = findIndex(propEq(key, lookupKey(key, action)), state)
 
     // Item does not exist in collection just return state
     if (index === -1 && !shouldAdd) {
-      return state;
+      return state
     }
 
     // Item does not exist but we should add it to the collection, append it
     if (index === -1 && shouldAdd) {
-      return state.concat(action.data);
+      return state.concat(action.data)
     }
 
-    const newState = fn(state[index], action.data);
+    const newState = fn(state[index], action.data)
 
     return cond([
       // if state is an array update it and return an array
       [ is(Array), update(index, newState) ],
       // if state is an object update it and return an object
       [ T, assoc(index, newState) ],
-    ])(state);
-  };
+    ])(state)
+  }
 }
 
 /**
@@ -77,7 +73,7 @@ function updateUsingKey (key, fn, shouldAdd) {
  * // => { b: 2 }
  */
 export function set (state, action) {
-  return action.data;
+  return action.data
 }
 
 /**
@@ -88,7 +84,7 @@ export function set (state, action) {
  * // => { a: 1, b: { d: 3 } }
  */
 export function merge (state, action) {
-  return mergeRight(state, action.data);
+  return mergeRight(state, action.data)
 }
 
 /**
@@ -99,7 +95,7 @@ export function merge (state, action) {
  * // => { a: 1, b: { c: 2, d: 3 } }
  */
 export function mergeDeep (state, action) {
-  return mergeDeepRight(state, action.data);
+  return mergeDeepRight(state, action.data)
 }
 
 /**
@@ -110,7 +106,7 @@ export function mergeDeep (state, action) {
  * // => [ { a: 1, c: 3 } ]
  */
 export function replaceByKey (key) {
-  return updateUsingKey(key, (current, next) => next);
+  return updateUsingKey(key, (current, next) => next)
 }
 
 /**
@@ -120,7 +116,7 @@ export function replaceByKey (key) {
  * replaceById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, b: 2 } ]
  */
-export const replaceById = replaceByKey('id');
+export const replaceById = replaceByKey("id")
 
 /**
  * mergeByKey :: String -> ([ { a  ], { data: * }) -> [ { a } ]}
@@ -129,7 +125,7 @@ export const replaceById = replaceByKey('id');
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
 export function mergeByKey (key) {
-  return updateUsingKey(key, mergeRight);
+  return updateUsingKey(key, mergeRight)
 }
 
 /**
@@ -139,7 +135,7 @@ export function mergeByKey (key) {
  * mergeById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
-export const mergeById = mergeByKey('id');
+export const mergeById = mergeByKey("id")
 
 /**
  * mergeDeepByKey :: String -> ([ { a }, { data: * }) -> [ { a } ]}
@@ -149,7 +145,7 @@ export const mergeById = mergeByKey('id');
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
 export function mergeDeepByKey (key) {
-  return updateUsingKey(key, mergeDeepRight);
+  return updateUsingKey(key, mergeDeepRight)
 }
 
 /**
@@ -159,7 +155,7 @@ export function mergeDeepByKey (key) {
  * mergeDeepById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
-export const mergeDeepById = mergeDeepByKey('id');
+export const mergeDeepById = mergeDeepByKey("id")
 
 /**
  * remove :: ([ a ], { data: a }) -> [ a ]
@@ -170,7 +166,7 @@ export const mergeDeepById = mergeDeepByKey('id');
  */
 export function remove (state, action) {
   return state
-    |> reject(equals(action.data));
+    |> reject(equals(action.data))
 }
 
 /**
@@ -185,7 +181,7 @@ export function remove (state, action) {
  */
 export function removeByKey (key) {
   return (state, action) => state
-    |> reject(propEq(key, lookupKey(key, action)));
+    |> reject(propEq(key, lookupKey(key, action)))
 }
 
 /**
@@ -198,7 +194,7 @@ export function removeByKey (key) {
  * removeById([ { id: 1 }, { id: 2 } ], { data: { id: 1 } })
  * // => [ { id: 2 } ]
  */
-export const removeById = removeByKey('id');
+export const removeById = removeByKey("id")
 
 /**
  * updateOrCreateByKey :: String -> ([ { a } ], { data: * }) -> [ { a } ]
@@ -210,7 +206,7 @@ export const removeById = removeByKey('id');
  * // => [ { id: 1, name: 'blue' }, { id: 2, color: 'red' } ]
  */
 export function updateOrCreateByKey (key) {
-  return updateUsingKey(key, mergeDeepRight, true);
+  return updateUsingKey(key, mergeDeepRight, true)
 }
 
 /**
@@ -222,7 +218,7 @@ export function updateOrCreateByKey (key) {
  * updateOrCreateById([ { id: 1, color: 'blue' } ], { data: { id: 2, color: 'red' } })
  * // => [ { id: 1, name: 'blue' }, { id: 2, color: 'red' } ]
  */
-export const updateOrCreateById = updateOrCreateByKey('id');
+export const updateOrCreateById = updateOrCreateByKey("id")
 
 /**
  * append :: ([ a ], { data: a }) -> [ a ]
@@ -232,7 +228,7 @@ export const updateOrCreateById = updateOrCreateByKey('id');
  * // => [ 1, 2, 3 ]
  */
 export function append (state, action) {
-  return state.concat(action.data);
+  return state.concat(action.data)
 }
 
 /**
@@ -243,7 +239,7 @@ export function append (state, action) {
  * // => [ 3, 1, 2 ]
  */
 export function prepend (state, action) {
-  return [ action.data ].concat(state);
+  return [ action.data ].concat(state)
 }
 
 /**
@@ -256,7 +252,7 @@ export function prepend (state, action) {
  */
 export function inKey (key, reducer) {
   return (state, action) => state
-    |> assoc(key, reducer(state[key], action));
+    |> assoc(key, reducer(state[key], action))
 }
 
 /**
@@ -265,8 +261,8 @@ export function inKey (key, reducer) {
  * Example:
  * unique([ 1, 2, 3, 3, ], _) -> [ 1, 2, 3 ]
  */
-export function unique (state, _) {
-  return uniq(state);
+export function unique (state) {
+  return uniq(state)
 }
 
 /**
@@ -277,7 +273,7 @@ export function unique (state, _) {
  * // => [ { a: 1 }]
  */
 export function uniqueByKey (key) {
-  return (state, _) => uniqBy(prop(key), state)
+  return (state) => uniqBy(prop(key), state)
 }
 
 /**
@@ -289,5 +285,5 @@ export function uniqueByKey (key) {
  */
 export function pipe (...reducers) {
   return (state, action) => reducers
-    |> reduce((state, reducer) => reducer(state, action), state);
+    |> reduce((state, reducer) => reducer(state, action), state)
 }

@@ -1,12 +1,12 @@
-import { prop, replace, unary } from 'ramda';
-import { argv } from 'yargs';
-import path from 'path';
-import Stream from 'highland';
+import { prop, replace, unary } from "ramda"
+import { argv } from "yargs"
+import path from "path"
+import Stream from "highland"
 
 function formatTaskFile (taskName) {
-  const fileName = replace(/:/g, '/', taskName);
+  const fileName = replace(/:/g, "/", taskName)
 
-  return `./${fileName}/${path.basename(fileName)}.task.js`;
+  return `./${fileName}/${path.basename(fileName)}.task.js`
 }
 
 
@@ -15,6 +15,6 @@ function formatTaskFile (taskName) {
 
 argv
   |> Stream.of
-  |> Stream.flatMap(prop('_'))
+  |> Stream.flatMap(prop("_"))
   |> Stream.map(formatTaskFile)
-  |> Stream.each(unary(require));
+  |> Stream.each(unary(require))

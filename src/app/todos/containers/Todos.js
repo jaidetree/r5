@@ -1,10 +1,9 @@
-import { compose } from 'ramda';
-import { connect } from 'react-redux';
-import { withHandlers } from 'recompose';
+import { connect } from "react-redux"
+import { withHandlers } from "recompose"
 
-import Todos from 'app/todos/components/Todos';
-import { removeTask, updateTask } from 'app/todos/use-cases/todos';
-import routerView from 'lib/hoc/routerView';
+import Todos from "app/todos/components/Todos"
+import { removeTask, updateTask } from "app/todos/use-cases/todos"
+import routerView from "lib/hoc/routerView"
 
 export default Todos
   |> withHandlers({
@@ -15,21 +14,21 @@ export default Todos
     removeTask,
     updateTask,
   })
-  |> routerView('todos');
+  |> routerView("todos")
 
 function selectState (state) {
   return {
     todos: state.todos.todos,
-  };
+  }
 }
 
 function onClickRemove (props) {
   return e => {
-    e.preventDefault();
+    e.preventDefault()
     if (window.confirm("Are you sure you want to delete this task?")) {
       props.removeTask(e.target.value)
     }
-  };
+  }
 }
 
 function onChangeCompleted (props) {
@@ -37,6 +36,6 @@ function onChangeCompleted (props) {
     props.updateTask({
       id: Number(e.target.value),
       completed: e.target.checked,
-    });
-  };
+    })
+  }
 }

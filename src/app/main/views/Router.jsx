@@ -1,12 +1,11 @@
-import { toPairs, propEq } from 'ramda';
-import React from 'react';
+import React from "react"
+import { propEq } from "ramda"
 
 export default function Router (props) {
   return (
     <div>
       {props.routes
-        .filter(route => props.views.some(propEq('name', route.name)))
-        .map(log('matching routes'))
+        .filter(route => props.views.some(propEq("name", route.name)))
         .map(({ name, Component }) => <Component key={name} />)
       }
       <pre>
@@ -16,4 +15,4 @@ export default function Router (props) {
   )
 }
 
-Router.displayName = 'Router';
+Router.displayName = "Router"

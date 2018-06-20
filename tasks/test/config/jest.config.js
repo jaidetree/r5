@@ -1,12 +1,11 @@
-import path from 'path';
-import { argv } from 'yargs';
+import { argv } from "yargs"
 
 export default {
   name: "r5",
   moduleFileExtensions: ["js", "json", "jsx"],
-  modulePaths: ['<rootDir>/src'],
+  modulePaths: ["<rootDir>/src"],
   rootDir: process.cwd(),
   testMatch: ["**/**.test.js"],
-  transform: ['babel-jest'],
+  transform: ["babel-jest"],
   watchAll: argv.watch || false,
 }

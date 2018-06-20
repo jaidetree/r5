@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react"
 
-import styled from 'styled-components';
+import styled from "styled-components"
 
 const Task = styled.li`
   display: flex;
@@ -10,16 +10,16 @@ const Task = styled.li`
   justify-content: stretch;
   padding: 0.625rem;
   border-bottom: 1px solid #e5e5e5;
-`;
+`
 
 const TaskDescription = styled.label`
   flex: 1 1 auto;
   margin: 0 0.625rem;
   font-size: 1.25rem;
-  color: ${props => props.completed ? '#ccc' : 'inherit'};
-  font-style: ${props => props.completed ? 'italic' : 'normal'};
-  text-decoration: ${props => props.completed ? 'line-through': 'none'};
-`;
+  color: ${props => props.completed ? "#ccc" : "inherit"};
+  font-style: ${props => props.completed ? "italic" : "normal"};
+  text-decoration: ${props => props.completed ? "line-through": "none"};
+`
 
 const Remove = styled.button`
   border: none;
@@ -27,15 +27,15 @@ const Remove = styled.button`
   cursor: pointer;
   outline: none;
   line-height: 2.25;
-`;
+`
 
 export default function Todo (props) {
-  const id = `task-checkbox-${props.todo.id}`;
+  const id = `task-checkbox-${props.todo.id}`
 
   return (
     <Task
       className="todo"
-      >
+    >
       <span className="todo__checkbox">
         <input
           checked={props.todo.completed}
@@ -51,7 +51,7 @@ export default function Todo (props) {
       </TaskDescription>
       <Remove type="button" onClick={props.onClickRemove} value={props.todo.id}>❌</Remove>
     </Task>
-  );
+  )
 }
 
-Todo.displayName = "Todo";
+Todo.displayName = "Todo"
