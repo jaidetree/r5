@@ -1,6 +1,8 @@
 import {
   always,
+  map as amap,
   pipe,
+  prop,
   propEq,
   pathEq,
 } from 'ramda';
@@ -20,6 +22,7 @@ import {
   switchMap,
   takeUntil,
   tap,
+  toArray,
   withLatestFrom,
 } from 'rxjs/operators';
 
@@ -38,22 +41,21 @@ import { INITIALIZE } from 'app/main/store/initialize';
 // Actions
 // ---------------------------------------------------------------------------
 export const actions = {
-  CLEANUP_VIEW: 'router/module/cleanup',
+  CLEANUP_VIEW: 'router/view/cleanup',
   INIT_VIEW: 'router/view/init',
+  LOADED_VIEW: 'router/view/loaded',
   NAVIGATE: 'router/url/navigate',
-  READY_MODULE: 'router/module/ready',
   REMOVE_VIEW: 'router/views/remove',
   ROUTE: 'router/url/route',
+  ROUTE_VIEW: 'router/view/route',
   START_LOADING: 'router/loading/start',
   START_ROUTING: 'router/start',
   STOP_LOADING: 'router/loading/stop',
 };
 
 export const ROUTE = actions.ROUTE;
-export const START_LOADING = actions.START_LOADING;
-export const STOP_LOADING = actions.STOP_LOADING;
 export const INIT_VIEW = actions.INIT_VIEW;
-export const READY_MODULE = actions.READY_MODULE;
+export const LOADED_VIEW = actions.LOADED_VIEW;
 export const CLEANUP_VIEW = actions.CLEANUP_VIEW;
 
 // Reducer
@@ -61,10 +63,7 @@ export const CLEANUP_VIEW = actions.CLEANUP_VIEW;
 export const reducer = combineReducers({
   views: createReducer({
     init: [],
-    [actions.INIT_VIEW]: reducers.pipe(
-      reducers.append,
-      reducers.uniqueByKey('name'),
-    ),
+    [actions.ROUTE_VIEW]: reducers.updateOrCreateByKey('name'),
     [actions.REMOVE_VIEW]: reducers.removeByKey('name'),
   }),
   loading: createReducer({
@@ -79,12 +78,13 @@ export const reducer = combineReducers({
 
 // Action Creators
 // ---------------------------------------------------------------------------
-export function appendView (view) {
-  return { type: actions.APPEND_VIEW, data: view };
+
+export function initView (view) {
+  return { type: actions.INIT_VIEW, data: view };
 }
 
-export function removeView (view) {
-  return { type: actions.REMOVE_VIEW, data: view };
+export function cleanupView (view) {
+  return { type: actions.CLEANUP_VIEW, data: view };
 }
 
 export function navigate (uri) {
@@ -129,12 +129,19 @@ function routingEpic (action$) {
     .ofType(actions.START_ROUTING)
     .pipe(
       pluck('data'),
-      map(Router.parseRoutes),
+      // get list of objects that map paths to view names and components and
+      // parse them into route target objects that can be used to match a url
+      // later
+      map(amap(route => Router.parseRoute(route.path, route.name))),
+      // wait for a ROUTE action from the store
       combineLatest(action$.ofType(actions.ROUTE).pipe(pluck('data'))),
+      // stream all the routes but filter down to only the routes that match
       flatMap(([ routes, location ]) => from(routes)
         .pipe(
-          tap(log('routing to', location)),
+          // test to see if route matches location, keep only those that pass
           filter(route => Router.isRoute(route, location)),
+          // build a data structure we can use to render views and fetch
+          // required data from the server
           map(route => ({
             path: location.path,
             query: location.query,
@@ -143,7 +150,17 @@ function routingEpic (action$) {
           })),
         )
       ),
-      map(createAction(actions.INIT_VIEW)),
+      // communicate that we are routing to a view
+      map(createAction(actions.ROUTE_VIEW)),
+    );
+}
+
+function startLoadingViewEpic (action$) {
+  return action$
+    .ofType(actions.ROUTE_VIEW)
+    .pipe(
+      pluck('data', 'name'),
+      map(startLoading),
     );
 }
 
@@ -151,6 +168,7 @@ export const epic = combineEpics(
   initializeEpic,
   navigateEpic,
   routingEpic,
+  startLoadingViewEpic,
 );
 
 // Helpers
@@ -171,7 +189,7 @@ export function handleRoute (patternStr, name) {
 
 export function routeEpic (name, epic) {
   return (action$, ...args) => action$
-    .ofType(INIT_VIEW)
+    .ofType(actions.ROUTE_VIEW)
     .pipe(
       filter(pathEq([ 'data', 'name' ], name)),
       switchMap(() => epic(action$, ...args)),

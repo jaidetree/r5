@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import { withHandlers } from 'recompose';
 
 import Todos from 'app/todos/components/Todos';
-import { removeTask, updateTask } from 'app/todos/use-cases/collection';
+import { removeTask, updateTask } from 'app/todos/use-cases/todos';
+import routerView from 'lib/hoc/routerView';
 
 export default Todos
   |> withHandlers({
@@ -13,11 +14,12 @@ export default Todos
   |> connect(selectState, {
     removeTask,
     updateTask,
-  });
+  })
+  |> routerView('todos');
 
 function selectState (state) {
   return {
-    todos: state.todos.collection,
+    todos: state.todos.todos,
   };
 }
 

@@ -53,9 +53,7 @@ export default class App extends React.Component {
       <RouterContext.Provider value={this.state.router}>
         <Provider store={this.state.store}>
           <Router
-            routes={{
-              'todos': Todos,
-            }}
+            routes={App.routes}
           />
           {/*
           <div className="page">

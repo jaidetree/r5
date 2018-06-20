@@ -110,7 +110,7 @@ export function parseQueryString (qs) {
  * Return an object with the arguments parsed into a named object
  */
 export function getArgsFromURL (route, location) {
-  return matchAll(route.pattern, location.path)
+  return matchAll(new RegExp(route.pattern), location.path)
     |> R.drop(1)
     |> R.map(R.when(R.test(NUM_PATTERN), Number))
     |> R.zipObj(route.args);
@@ -167,6 +167,6 @@ function parseArgs (patternStr) {
  */
 function parsePattern (patternStr) {
   return patternStr
-    |> R.replace(ARG_PATTERN, '\/([^\/]+)')
+    |> R.replace(ARG_PATTERN, '\/([^\\/]+)')
     |> (str => new RegExp(str, 'gi'));
 }

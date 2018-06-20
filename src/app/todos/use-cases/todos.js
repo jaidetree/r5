@@ -1,6 +1,6 @@
-import { map as amap, when, propEq, assoc, filter } from 'ramda';
+import * as R  from 'ramda';
 import { of } from 'rxjs';
-import { map, flatMap, pluck, tap } from 'rxjs/operators';
+import { delay, filter, flatMap, map, mapTo, pluck, tap } from 'rxjs/operators';
 import * as todos from 'app/todos/api';
 import * as Routes from 'app/main/use-cases/router';
 
@@ -33,9 +33,9 @@ export const reducer = createReducer({
   [actions.UPDATE_TODO]: reducers.mergeById,
   [actions.REMOVE_TODO]: reducers.removeById,
   [actions.COMPLETE_TODO]: (state, action) =>
-    amap(when(
-      propEq('id', action.data.id),
-      assoc('complete', true),
+    R.map(R.when(
+      R.propEq('id', action.data.id),
+      R.assoc('complete', true),
     )),
 });
 
@@ -53,7 +53,14 @@ export function updateTask (data) {
 // Epic
 // ---------------------------------------------------------------------------
 function initEpic (action$) {
-  return of(createAction(actions.FETCH_TODOS, {}));
+  return action$
+    .ofType(Routes.INIT_VIEW)
+    .pipe(
+      pluck('data'),
+      filter(R.equals('todos')),
+      mapTo({}),
+      map(createAction(actions.FETCH_TODOS)),
+    );
 }
 
 function fetchEpic (action$, state$, { request }) {
@@ -65,12 +72,23 @@ function fetchEpic (action$, state$, { request }) {
     );
 }
 
+function stopLoadingEpic (action$) {
+  return action$
+    .ofType(actions.SET_TODOS)
+    .pipe(
+      delay(1500),
+      mapTo('todos'),
+      map(Routes.stopLoading),
+    );
+}
+
 export const epic = combineEpics(
   initEpic,
   fetchEpic,
+  stopLoadingEpic,
 );
 
 // Selectors
 // ---------------------------------------------------------------------------
-export const selectIncomplete = filter(propEq('complete', false));
-export const selectComplete = filter(propEq('complete', true));
+export const selectIncomplete = R.filter(R.propEq('complete', false));
+export const selectComplete = R.filter(R.propEq('complete', true));

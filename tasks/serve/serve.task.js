@@ -1,3 +1,5 @@
+import fs from 'fs';
+import URL from 'url';
 import gulp from 'gulp';
 import browserSync from 'browser-sync';
 import webpackConfig from './config/webpack.config';
@@ -19,6 +21,16 @@ gulp.task('serve', () => {
           stats: { colors: true },
         }),
         webpackHotMiddleware(bundler),
+        (req, res, next) => {
+          const url = URL.parse(req.url);
+
+          // rewrite URIs to index for SPA architecture
+          if (!url.pathname.includes('.')) {
+            req.url = '/';
+          }
+
+          next();
+        },
       ],
     },
     files: ['public/**/*.html', 'public/**/*.css']

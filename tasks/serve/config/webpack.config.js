@@ -3,7 +3,7 @@ import webpack from 'webpack';
 
 export default {
   mode: 'development',
-  devtool: 'cheap-eval-source-map',
+  devtool: 'source-map',
   entry: [
     'webpack/hot/dev-server',
     'webpack-hot-middleware/client?reload=true&noinfo=true',
@@ -23,7 +23,11 @@ export default {
   },
   module: {
     rules: [
-      { test: /\.js[x]?$/, exclude: /node_modules/, loader: "babel-loader" },
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        loader: "babel-loader",
+      },
     ],
   },
   plugins: [
