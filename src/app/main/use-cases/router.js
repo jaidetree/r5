@@ -38,9 +38,8 @@ import { INITIALIZE } from 'app/main/store/initialize';
 // Actions
 // ---------------------------------------------------------------------------
 export const actions = {
-  APPEND_VIEW: 'router/views/append',
-  CLEANUP_MODULE: 'router/module/cleanup',
-  INIT_MODULE: 'router/module/init',
+  CLEANUP_VIEW: 'router/module/cleanup',
+  INIT_VIEW: 'router/view/init',
   NAVIGATE: 'router/url/navigate',
   READY_MODULE: 'router/module/ready',
   REMOVE_VIEW: 'router/views/remove',
@@ -53,16 +52,16 @@ export const actions = {
 export const ROUTE = actions.ROUTE;
 export const START_LOADING = actions.START_LOADING;
 export const STOP_LOADING = actions.STOP_LOADING;
-export const INIT_MODULE = actions.INIT_MODULE;
+export const INIT_VIEW = actions.INIT_VIEW;
 export const READY_MODULE = actions.READY_MODULE;
-export const CLEANUP_MODULE = actions.CLEANUP_MODULE;
+export const CLEANUP_VIEW = actions.CLEANUP_VIEW;
 
 // Reducer
 // ---------------------------------------------------------------------------
 export const reducer = combineReducers({
   views: createReducer({
     init: [],
-    [actions.APPEND_VIEW]: reducers.pipe(
+    [actions.INIT_VIEW]: reducers.pipe(
       reducers.append,
       reducers.uniqueByKey('name'),
     ),
@@ -144,16 +143,7 @@ function routingEpic (action$) {
           })),
         )
       ),
-      map(createAction(actions.INIT_MODULE)),
-    )
-}
-
-function initModuleEpic (action$) {
-  return action$
-    .ofType(actions.INIT_MODULE)
-    .pipe(
-      pluck('data'),
-      map(createAction(actions.APPEND_VIEW)),
+      map(createAction(actions.INIT_VIEW)),
     );
 }
 
@@ -161,7 +151,6 @@ export const epic = combineEpics(
   initializeEpic,
   navigateEpic,
   routingEpic,
-  initModuleEpic,
 );
 
 // Helpers
@@ -182,11 +171,11 @@ export function handleRoute (patternStr, name) {
 
 export function routeEpic (name, epic) {
   return (action$, ...args) => action$
-    .ofType(INIT_MODULE)
+    .ofType(INIT_VIEW)
     .pipe(
       filter(pathEq([ 'data', 'name' ], name)),
       switchMap(() => epic(action$, ...args)),
-      takeUntil(action$.ofType(CLEANUP_MODULE).pipe(
+      takeUntil(action$.ofType(CLEANUP_VIEW).pipe(
         filter(propEq('data', name)),
       ))
     );
