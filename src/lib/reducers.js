@@ -3,6 +3,7 @@ import {
   cond,
   curry,
   either,
+  equals,
   filter,
   findIndex,
   identity,
@@ -16,6 +17,7 @@ import {
   T,
   tap,
   uniq,
+  uniqBy,
   update,
 } from 'ramda';
 
@@ -151,13 +153,25 @@ export function mergeDeepByKey (key) {
 }
 
 /**
- * mergeDeepById :: ([ { a  ], { data: * }) -> [ { a } ]}
+ * mergeDeepById :: ([ { a }  ], { data: * }) -> [ { a } ]}
  * Merges action.data into a collection where action.data.id is found within.
  * Example:
  * mergeDeepById([ { id: 1, a: 1 } ], { data: { id: 1, b: 2 } })
  * // => [ { id: 1, a: 1, b: 2 } ]
  */
 export const mergeDeepById = mergeDeepByKey('id');
+
+/**
+ * remove :: ([ a ], { data: a }) -> [ a ]
+ * Removes an item from a list that matches an existing element
+ * Example:
+ * remove([1, 2, 3], { data: 2 })
+ * // => [1, 3]
+ */
+export function remove (state, action) {
+  return state
+    |> reject(equals(action.data));
+}
 
 /**
  * removeByKey :: String -> ([ { a  ], { data: * }) -> [ { a } ]}
@@ -170,7 +184,8 @@ export const mergeDeepById = mergeDeepByKey('id');
  * // => [ { color: 'blue' } ]
  */
 export function removeByKey (key) {
-  return (state, action) => reject(propEq(key, lookupKey(key, action)), state);
+  return (state, action) => state
+    |> reject(propEq(key, lookupKey(key, action)));
 }
 
 /**
@@ -240,7 +255,8 @@ export function prepend (state, action) {
  * // => { color: 'green' }
  */
 export function inKey (key, reducer) {
-  return (state, action) => assoc(key, reducer(state[key], action), state);
+  return (state, action) => state
+    |> assoc(key, reducer(state[key], action));
 }
 
 /**
@@ -251,6 +267,17 @@ export function inKey (key, reducer) {
  */
 export function unique (state, _) {
   return uniq(state);
+}
+
+/**
+ * uniqueKey :: String -> ([ { a } ], { data: { a }}) -> [ { a } ]
+ * Enforce unique values in a collection by using a key prop of each item
+ * Example:
+ * uniqueByKey('a')([ { a: 1 }, { a: 1 } ], _)
+ * // => [ { a: 1 }]
+ */
+export function uniqueByKey (key) {
+  return (state, _) => uniqBy(prop(key), state)
 }
 
 /**

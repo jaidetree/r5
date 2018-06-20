@@ -9,7 +9,10 @@ import { reducer, epic } from './use-cases';
 
 // @debug
 import { ignoreElements } from 'rxjs/operators';
-import { INITIALIZE, initialize } from './store/initialize';
+import { initialize } from './store/initialize';
+import * as request from 'lib/request';
+
+import Router from './containers/Router';
 import Todos from 'app/todos/containers/Todos';
 
 export default class App extends React.Component {
@@ -17,11 +20,20 @@ export default class App extends React.Component {
 
   state = {
     router: createRouter({}),
-    store: createStore(reducer, epic, {})
+    store: {}
   };
 
   componentWillMount () {
-    window.store = this.state.store;
+    const store = createStore(reducer, epic, {}, {
+      dependencies: {
+        router: this.state.router,
+        request,
+        window,
+      },
+    });
+
+    this.setState({ store });
+    window.store = store;
   }
 
   componentWillUnmount () {
@@ -36,9 +48,16 @@ export default class App extends React.Component {
     return (
       <RouterContext.Provider value={this.state.router}>
         <Provider store={this.state.store}>
+          <Router
+            routes={{
+              'todos': Todos,
+            }}
+          />
+          {/*
           <div className="page">
             <Todos />
           </div>
+          */}
         </Provider>
       </RouterContext.Provider>
     )

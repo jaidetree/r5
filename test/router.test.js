@@ -124,7 +124,7 @@ describe('router', () => {
         query: {},
       };
 
-      expectEqual(Router.isRoute(location, route), true);
+      expectEqual(Router.isRoute(route, location), true);
     });
 
     test('returns false when uri does not match pattern', () => {
@@ -138,7 +138,7 @@ describe('router', () => {
         query: {},
       };
 
-      expectEqual(Router.isRoute(location, route), false);
+      expectEqual(Router.isRoute(route, location), false);
     });
   });
 
@@ -163,9 +163,9 @@ describe('router', () => {
         args: ['id', 'slug'],
         name: 'view_article',
       };
-      const uri = '/tests/article/25/abc-def';
+      const uri = { path: '/tests/article/25/abc-def', query: {} };
 
-      expectEqual(Router.getArgsFromURL(uri, route), {
+      expectEqual(Router.getArgsFromURL(route, uri), {
         id: 25,
         slug: 'abc-def',
       });

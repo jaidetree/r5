@@ -25,3 +25,18 @@ export default function log (label, ...extra) {
     return args[0];
   };
 }
+
+log.spy = function spy (label, fn) {
+  return (...input) => {
+    if (window.R5.DEBUG && window && window.console) {
+      console.trace(label + '.input', ...input);
+    }
+    const output = fn(...input);
+
+    if (window.R5.DEBUG && window && window.console) {
+      console.trace(label + '.output', output);
+    }
+
+    return output;
+  };
+};

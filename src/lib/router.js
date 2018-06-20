@@ -10,10 +10,10 @@ const NUM_PATTERN = /^\d+(\.\d+)?$/g;
  * Create a router object instance for reacting to URL changes and pushing
  * new state.
  */
-export function createRouter (config) {
-  const window = config.window || window;
-  const location = config.location || window.location;
-  const history = config.history || window.history;
+export function createRouter (config={}) {
+  const browser = config.window || window;
+  const location = config.location || browser.location;
+  const history = config.history || browser.history;
   const getURL = R.partial(getURLFromLocation, [ location ]);
 
   // $ denotes "stream"
@@ -52,26 +52,34 @@ export function createRouter (config) {
 }
 
 /**
- * parseRoutes :: { String: String } -> { pattern: RegExp, args: [ String ], route: { route } }
+ * parseRoute :: (String, String) -> { pattern: RegExp, args: [ String ], route: { route } }
+ * Parse a patternStr into a usable route object to handle later
+ */
+export function parseRoute (patternStr, name) {
+  return {
+    pattern: parsePattern(patternStr),
+    args: parseArgs(patternStr),
+    name,
+  };
+}
+
+/**
+ * parseRoutes :: { String: String } -> [ { pattern: RegExp, args: [ String ], route: { route } } ]
  * Parse a map of routes into an array of objects containing the parsed regex
  * & args array
  */
 export function parseRoutes (routes) {
   return routes
     |> R.toPairs
-    |> R.map(([ patternStr, name ]) => ({
-      pattern: parsePattern(patternStr),
-      args: parseArgs(patternStr),
-      name,
-    }));
+    |> R.map(R.apply(parseRoute));
 }
 
 /**
- * isRoute :: ({ path: String, queryString: { a }}, { name: String, args: [ String ], pattern: RegExp }) -> Boolean
+ * isRoute :: ({ name: String, args: [ String ], pattern: RegExp }, { path: String, queryString: { a } }) -> Boolean
  * Determine if a route object matches a given url.
  */
-export function isRoute (route, handler) {
-  return handler.pattern.test(route.path);
+export function isRoute (route, location) {
+  return route.pattern.test(location.path);
 }
 
 /**
@@ -98,22 +106,21 @@ export function parseQueryString (qs) {
 }
 
 /**
- * getArgsFromURL :: String -> Route
- * Return an object with the arguments parsed
+ * getArgsFromURL :: ({ pattern: Regxp, args: [ String ] }, { path: String, query: { a } }) -> { b }
+ * Return an object with the arguments parsed into a named object
  */
-export function getArgsFromURL (url, route) {
-  return matchAll(route.pattern, url)
+export function getArgsFromURL (route, location) {
+  return matchAll(route.pattern, location.path)
     |> R.drop(1)
     |> R.map(R.when(R.test(NUM_PATTERN), Number))
     |> R.zipObj(route.args);
 }
 
 /**
- *
  * getURLFromLocation :: ({ pathname: String, search: String }) -> { path: String, query: string }
  * Return a plain javascript object with path and query data.
  */
-function getURLFromLocation (location) {
+export function getURLFromLocation (location) {
   return {
     path: location.pathname,
     query: parseQueryString(location.search),

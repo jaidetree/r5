@@ -109,6 +109,18 @@ describe("Reducers", () => {
     });
   });
 
+  describe(".remove", () => {
+    test("it should remove an item from a collection", () => {
+      const state =  [1, 2, 3];
+      const action = { data: 2 };
+
+      expectEqual(reducers.remove(state, action), [
+        1,
+        3,
+      ]);
+    });
+  });
+
   describe(".removeByKey", () => {
     test("it should remove an item from a collection with data object", () => {
       const state = [ { id: 1, a: 1 }, { id: 2, a: 2 } ];
@@ -259,6 +271,18 @@ describe("Reducers", () => {
         1,
         2,
         3,
+      ]);
+    });
+  });
+
+  describe(".uniqueByKey", () => {
+    test("it should remove duplicates from a list with a key", () => {
+      const state = [ { a: 1 }, { a: 1 }, { a: 2 } ];
+      const action = { data: 1 };
+
+      expectEqual(reducers.uniqueByKey('a')(state, action), [
+        { a: 1 },
+        { a: 2 },
       ]);
     });
   });
