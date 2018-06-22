@@ -4,6 +4,6 @@ services:
   node:
     build: .
     volumes:
-      - .:/var/app
+      - .:/var/app:cached
     ports:
       - "3030:3000"
