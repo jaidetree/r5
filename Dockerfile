@@ -5,9 +5,10 @@ VOLUME /var/app
 ADD package.json yarn.lock ./
 
 RUN yarn install
-RUN yarn global add gulp
 
 WORKDIR /var/app
 
+STOPSIGNAL SIGINT
+
 EXPOSE 3000
-CMD ["npx", "gulp", "serve"]
+CMD ["/node_modules/.bin/gulp", "serve"]
