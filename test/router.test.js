@@ -3,14 +3,21 @@ import * as Router from "lib/router"
 import { expectA, expectEqual } from "./lib/util"
 
 function createConfig (props) {
+  let location = {
+    pathname: "/",
+    search: "",
+  }
+
   return {
-    window: window,
-    location: {
-      pathname: "/",
-      search: "",
-    },
+    window,
+    location,
     history: {
-      pushState: jest.fn(),
+      pushState: jest.fn().mockImplementation((title, state, url) => {
+        const [ pathname, search ] = url.split("?")
+
+        location.pathname = pathname
+        location.search = search
+      }),
     },
     ...props,
   }
@@ -23,11 +30,13 @@ describe("router", () => {
 
       expectEqual(Object.keys(router), [
         "route$",
+        "routeLocation",
         "navigate",
         "unsubscribe"
       ])
 
       expectA(router.route$, Rx.Observable)
+      expectA(router.routeLocation, Function)
       expectA(router.navigate, Function)
       expectA(router.unsubscribe, Function)
     })
@@ -112,7 +121,7 @@ describe("router", () => {
     })
   })
 
-  describe(".isRoute", () => {
+  describe(".isRouteHit", () => {
     test("returns true when uri matches pattern", () => {
       const route = {
         pattern: /\/tests\/article\/([^/]+)\/([^/]+)/gi,
@@ -124,7 +133,7 @@ describe("router", () => {
         query: {},
       }
 
-      expectEqual(Router.isRoute(route, location), true)
+      expectEqual(Router.isRouteHit(route, location), true)
     })
 
     test("returns false when uri does not match pattern", () => {
@@ -138,7 +147,7 @@ describe("router", () => {
         query: {},
       }
 
-      expectEqual(Router.isRoute(route, location), false)
+      expectEqual(Router.isRouteHit(route, location), false)
     })
   })
 
