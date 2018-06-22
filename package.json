@@ -7,6 +7,7 @@
   "author": "Jay Zawrotny <jayzawrotny@gmail.com>",
   "license": "BSD-3-Clause",
   "scripts": {
+    "serve": "yarn install && npx gulp serve",
     "test": "jest"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import * as R  from "ramda"
 import { delay, filter, flatMap, map, mapTo, pluck } from "rxjs/operators"
 import * as todos from "app/todos/api"
-import * as Routes from "app/main/use-cases/router"
+import { INIT_VIEW, stopLoading } from "app/main/use-cases/routing"
 
 import {
   createAction,
@@ -51,7 +51,7 @@ export function updateTask (data) {
 // ---------------------------------------------------------------------------
 function initEpic (action$) {
   return action$
-    .ofType(Routes.INIT_VIEW)
+    .ofType(INIT_VIEW)
     .pipe(
       pluck("data"),
       filter(R.equals("todos")),
@@ -75,7 +75,7 @@ function stopLoadingEpic (action$) {
     .pipe(
       delay(1500),
       mapTo("todos"),
-      map(Routes.stopLoading),
+      map(stopLoading),
     )
 }
 

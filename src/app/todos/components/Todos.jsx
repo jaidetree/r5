@@ -13,18 +13,10 @@ const TodoList = styled.ul`
   list-style: none;
 `
 
-const Title = styled.h1`
-  font-size: 2rem;
-  text-align: center;
-`
-
 export default function Todos (props) {
   return (
     <Wrapper className="todos">
       <TodoList className="todos__list">
-        <Title>
-          R5 Todos App
-        </Title>
         {props.todos.map(todo => (
           <Todo
             key={todo.id}

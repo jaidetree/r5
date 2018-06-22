@@ -1,6 +1,6 @@
 import * as R from "ramda"
-import { fromEvent, BehaviorSubject } from "rxjs"
-import { map } from "rxjs/operators"
+import { from, fromEvent, BehaviorSubject } from "rxjs"
+import { filter, map } from "rxjs/operators"
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g
 const NUM_PATTERN = /^\d+(\.\d+)?$/g
@@ -11,6 +11,7 @@ const NUM_PATTERN = /^\d+(\.\d+)?$/g
  * new state.
  */
 export function createRouter (config={}) {
+  const routes = parseRoutes(config.routes || {})
   const browser = config.window || window
   const location = config.location || browser.location
   const history = config.history || browser.history
@@ -20,7 +21,7 @@ export function createRouter (config={}) {
   const route$ = new BehaviorSubject(getURL())
 
   // $$ denotes "stream subscription"
-  const popstate$$ = fromEvent(window, "popstate")
+  const popstate$$ = fromEvent(browser, "popstate")
     .pipe(
       map(getURL),
     )
@@ -29,17 +30,29 @@ export function createRouter (config={}) {
   return {
     route$,
 
+    routeLocation (location) {
+      return from(routes)
+        .pipe(
+          // test to see if route matches location, keep only those that pass
+          filter(route => isRouteHit(route, location)),
+          // build a data structure we can use to render views and fetch
+          // required data from the server
+          map(route => ({
+            path: location.path,
+            query: location.query,
+            params: getArgsFromURL(route, location),
+            name: route.name,
+          })),
+        )
+    },
+
     // Push or replace URL state
     navigate (uri, opts={}) {
       const methodName = opts.replace ? "replaceState" : "pushState"
-      const [ path, queryString="" ] = uri.split("?")
 
       history[methodName](opts.data || null, opts.title || null, uri)
 
-      return route$.next({
-        path,
-        query: parseQueryString(queryString),
-      })
+      return route$.next(getURL())
     },
 
     // End route streams and dispose subscribers
@@ -75,11 +88,11 @@ export function parseRoutes (routes) {
 }
 
 /**
- * isRoute :: ({ name: String, args: [ String ], pattern: RegExp }, { path: String, queryString: { a } }) -> Boolean
+ * isRouteHit :: ({ name: String, args: [ String ], pattern: RegExp }, { path: String, queryString: { a } }) -> Boolean
  * Determine if a route object matches a given url.
  */
-export function isRoute (route, location) {
-  return route.pattern.test(location.path)
+export function isRouteHit (route, location) {
+  return new RegExp(route.pattern).test(location.path)
 }
 
 /**

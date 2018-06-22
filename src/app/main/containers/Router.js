@@ -1,7 +1,8 @@
 import { connect } from "react-redux"
 import { compose, pipe } from "ramda"
-import Router from "app/main/views/Router"
-import { navigate } from "app/main/use-cases/router"
+import { navigate } from "app/main/use-cases/routing"
+
+import Router from "app/main/components/Router"
 
 export default compose(
   connect(selectState, selectActions)
@@ -9,7 +10,7 @@ export default compose(
 
 function selectState (state) {
   return {
-    views: state.router.views,
+    views: state.routing.views,
   }
 }
 

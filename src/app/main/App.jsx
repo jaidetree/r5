@@ -13,16 +13,18 @@ import { initialize } from "./store/initialize"
 import * as request from "lib/request"
 
 import Router from "./containers/Router"
-import Todos from "app/todos/containers/Todos"
+import Route from "./containers/Route";
+import TodosApp from "app/todos/TodosApp";
 import routes from "app/routes"
-import { startRouting } from "app/main/use-cases/router"
 
 export default class App extends React.Component {
   static displayName = "App";
   static routes = routes;
 
   state = {
-    router: createRouter({}),
+    router: createRouter({
+      routes: App.routes,
+    }),
     store: {}
   };
 
@@ -44,22 +46,16 @@ export default class App extends React.Component {
   }
 
   componentDidMount () {
-    this.state.store.dispatch(startRouting(App.routes))
-    this.state.store.dispatch(initialize())
+    this.state.store.dispatch(initialize());
   }
 
   render () {
     return (
       <RouterContext.Provider value={this.state.router}>
         <Provider store={this.state.store}>
-          <Router
-            routes={App.routes}
-          />
-          {/*
-          <div className="page">
-            <Todos />
-          </div>
-          */}
+          <Router>
+            <Route route="todos" component={TodosApp} />
+          </Router>
         </Provider>
       </RouterContext.Provider>
     )
