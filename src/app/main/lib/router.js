@@ -30,7 +30,6 @@ export function createRouter (config={}) {
     route$,
 
     routeToViews (routes, location) {
-      debugger;
       return from(routes)
         .pipe(
           // test to see if route matches location, keep only those that pass
