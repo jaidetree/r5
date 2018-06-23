@@ -1,5 +1,5 @@
 export const INITIALIZE = "app/initialize"
 
-export function initialize () {
-  return { type: INITIALIZE, data: {} }
+export function initialize (data={}) {
+  return { type: INITIALIZE, data }
 }

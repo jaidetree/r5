@@ -1,9 +1,12 @@
 import {
   always,
+  apply,
   map as amap,
+  path,
   pipe,
   propEq,
   pathEq,
+  reverse,
 } from "ramda"
 
 import {
@@ -19,8 +22,10 @@ import {
   map,
   pluck,
   switchMap,
+  switchMapTo,
   takeUntil,
   tap,
+  withLatestFrom,
 } from "rxjs/operators"
 
 import {
@@ -30,6 +35,8 @@ import {
   createReducer,
   reducers,
 } from "lib/useCase"
+
+import { parseRoutes } from "app/main/lib/router"
 
 import { INITIALIZE } from "app/main/store/initialize"
 
@@ -43,6 +50,7 @@ export const actions = {
   NAVIGATE: "routing/url/navigate",
   REMOVE_VIEW: "routing/views/remove",
   ROUTE: "routing/url/route",
+  SET_ROUTES: "routing/routes/set",
   START_LOADING: "routing/loading/start",
   STOP_LOADING: "routing/loading/stop",
 }
@@ -55,6 +63,10 @@ export const CLEANUP_VIEW = actions.CLEANUP_VIEW
 // Reducer
 // ---------------------------------------------------------------------------
 export const reducer = combineReducers({
+  routes: createReducer({
+    init: [],
+    [actions.SET_ROUTES]: reducers.set,
+  }),
   views: createReducer({
     init: [],
     [actions.APPEND_VIEW]: reducers.updateOrCreateByKey("name"),
@@ -95,23 +107,15 @@ export function stopLoading (name) {
 
 // Epics
 // ---------------------------------------------------------------------------
-function initializeEpic (action$, state$, { router }) {
-  const requestEpic = action$
+function initializeEpic (action$) {
+  return action$
     .ofType(INITIALIZE)
     .pipe(
-      switchMap(always(router.route$)),
-      map(createAction(actions.ROUTE)),
+      tap(log("receiving routes")),
+      pluck("data", "routes"),
+      map(parseRoutes),
+      map(createAction(actions.SET_ROUTES)),
     )
-
-  const responseEpic = action$
-    .ofType(actions.ROUTE)
-    .pipe(
-      pluck("data"),
-      flatMap(router.routeLocation),
-      map(createAction(actions.APPEND_VIEW))
-    )
-
-  return merge(requestEpic, responseEpic)
 }
 
 function navigateEpic (action$, state$, { router }) {
@@ -133,8 +137,32 @@ function startLoadingViewEpic (action$) {
     )
 }
 
+function routingEpic (action$, state$, { router }) {
+  const requestEpic = action$
+    .ofType(actions.SET_ROUTES)
+    .pipe(
+      switchMapTo(router.route$),
+      map(createAction(actions.ROUTE)),
+    )
+
+  const responseEpic = action$
+    .ofType(actions.ROUTE)
+    .pipe(
+      pluck("data"),
+      withLatestFrom(state$.pipe(
+        map(path([ "routing", "routes" ]))
+      )),
+      switchMap(pipe(reverse, apply(router.routeToViews))),
+      map(createAction(actions.APPEND_VIEW))
+    )
+
+
+  return merge(requestEpic, responseEpic)
+}
+
 export const epic = combineEpics(
   initializeEpic,
   navigateEpic,
+  routingEpic,
   startLoadingViewEpic,
 )

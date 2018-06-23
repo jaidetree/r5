@@ -1,44 +1,39 @@
 import React from "react"
 import { Provider } from "react-redux"
 
-import { createRouter } from "lib/router"
-import { RouterContext } from "app/main/context"
-import createStore from "app/main/store/index"
-
-import { reducer, epic } from "./use-cases"
-
-// @debug
-import { ignoreElements } from "rxjs/operators"
-import { initialize } from "./store/initialize"
+// Shared Libs
 import * as request from "lib/request"
 
+// Views
+import Route from "./containers/Route"
 import Router from "./containers/Router"
-import Route from "./containers/Route";
-import TodosApp from "app/todos/TodosApp";
+import TodosApp from "app/todos/TodosApp"
+
+// App
+import { createRouter } from "app/main/lib/router"
+import createStore from "app/main/store/index"
 import routes from "app/routes"
+import { RouterContext } from "app/main/context"
+import { initialize } from "./store/initialize"
+import { reducer, epic } from "./use-cases"
 
 export default class App extends React.Component {
   static displayName = "App";
   static routes = routes;
 
-  state = {
-    router: createRouter({
-      routes: App.routes,
-    }),
-    store: {}
-  };
+  state = {};
 
-  componentWillMount () {
-    const store = createStore(reducer, epic, {}, {
+  constructor (props) {
+    super(props)
+    this.state.router = createRouter({})
+    this.state.store = createStore(reducer, epic, {}, {
       dependencies: {
         router: this.state.router,
         request,
         window,
       },
     })
-
-    this.setState({ store })
-    window.store = store
+    window.store = this.state.store
   }
 
   componentWillUnmount () {
@@ -46,7 +41,9 @@ export default class App extends React.Component {
   }
 
   componentDidMount () {
-    this.state.store.dispatch(initialize());
+    this.state.store.dispatch(initialize({
+      routes: App.routes,
+    }))
   }
 
   render () {

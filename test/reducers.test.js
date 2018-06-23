@@ -1,5 +1,5 @@
 import * as reducers from "lib/reducers"
-import { expectEqual } from "./lib/util"
+import { expectEqual } from "test/lib/util"
 
 describe("Reducers", () => {
   describe(".set", () => {

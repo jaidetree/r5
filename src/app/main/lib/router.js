@@ -11,7 +11,6 @@ const NUM_PATTERN = /^\d+(\.\d+)?$/g
  * new state.
  */
 export function createRouter (config={}) {
-  const routes = parseRoutes(config.routes || {})
   const browser = config.window || window
   const location = config.location || browser.location
   const history = config.history || browser.history
@@ -30,7 +29,8 @@ export function createRouter (config={}) {
   return {
     route$,
 
-    routeLocation (location) {
+    routeToViews (routes, location) {
+      debugger;
       return from(routes)
         .pipe(
           // test to see if route matches location, keep only those that pass
@@ -100,6 +100,13 @@ export function isRouteHit (route, location) {
  * Parses a query string into an object including nested JSON objects.
  */
 export function parseQueryString (qs) {
+  const valueEquals = R.propEq(1)
+  const valueIs = R.propSatisfies(R.__, 1)
+  const setValue = R.update(1)
+  const adjustValue = R.adjust(R.__, 1)
+  const isNumber = R.test(NUM_PATTERN)
+  const parseJSON = R.tryCatch(JSON.parse, R.always(null))
+
   return qs
     |> R.replace(/^\?/, "")
     |> R.split("&")
@@ -107,10 +114,10 @@ export function parseQueryString (qs) {
       R.split("="),
       R.map(decodeURIComponent),
       R.cond([
-        [ R.propEq(1, "true"), R.update(1, true) ],
-        [ R.propEq(1, "false"), R.update(1, false) ],
-        [ R.propSatisfies(isJSON, 1), R.adjust(JSON.parse, 1) ],
-        [ R.propSatisfies(R.test(NUM_PATTERN), 1), R.adjust(Number, 1) ],
+        [ valueEquals("true"),  setValue(true) ],
+        [ valueEquals("false"), setValue(false) ],
+        [ valueIs(isJSON),      adjustValue(parseJSON) ],
+        [ valueIs(isNumber),    adjustValue(Number) ],
         [ R.T, R.identity ],
       ]),
     ))

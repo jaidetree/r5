@@ -1,6 +1,6 @@
 import * as Rx from "rxjs/Rx"
-import * as Router from "lib/router"
-import { expectA, expectEqual } from "./lib/util"
+import * as Router from "app/main/lib/router"
+import { expectA, expectEqual } from "test/lib/util"
 
 function createConfig (props) {
   let location = {
@@ -30,13 +30,13 @@ describe("router", () => {
 
       expectEqual(Object.keys(router), [
         "route$",
-        "routeLocation",
+        "routeToViews",
         "navigate",
         "unsubscribe"
       ])
 
       expectA(router.route$, Rx.Observable)
-      expectA(router.routeLocation, Function)
+      expectA(router.routeToViews, Function)
       expectA(router.navigate, Function)
       expectA(router.unsubscribe, Function)
     })

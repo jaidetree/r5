@@ -14,8 +14,7 @@ gulp.task("test:unit", () => jest
     R.prop("numFailedTestSuites"),
   ))
   |> Stream.flatMap(R.pipe(
-    R.always("Tests failed"),
-    R.construct(PluginError),
+    () => new PluginError("test:unit", "Tests failed"),
     Stream.fromError,
   ))
   |> Stream.toNodeStream({ objectMode: true })
