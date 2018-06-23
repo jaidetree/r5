@@ -1,4 +1,4 @@
 export default {
   "^/$": "todos",
-  "^/todo/:id$": "todo",
+  "^/todo/:id/$": "todo",
 }

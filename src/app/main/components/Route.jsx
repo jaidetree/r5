@@ -1,4 +1,4 @@
-import { compose, equals, prop } from "ramda"
+import { compose, equals } from "ramda"
 import { branch, lifecycle, renderComponent, } from "recompose"
 
 import React from "react"
@@ -13,23 +13,34 @@ Route.displayName = "Route"
 
 export default compose(
   lifecycle({
+    state: {
+      isInitialized: false,
+    },
+
     componentDidMount () {
       this.props.initView(this.props.route)
     },
 
-    componentDidUpdate (prev) {
-      const next = this.props
-      if (!equals(prev.view, next.view)) {
-        this.props.initView(next.route)
+    componentDidUpdate (prevProps) {
+      const nextProps = this.props
+
+      if (!equals(prevProps.view, nextProps.view)) {
+        this.props.initView(nextProps.route)
+      }
+
+      // mark this component as initialized if is done loading
+      if (!this.state.isInitialized && !nextProps.isLoading) {
+        this.setState({ isInitialized: true })
       }
     },
 
     componentWillUnmount () {
+      this.setState({ isInitialized: false })
       this.props.cleanupView(this.props.route)
     }
   }),
   branch(
-    prop("isLoading"),
+    props => props.isLoading || !props.isInitialized,
     renderComponent(() => <span>Loading&hellip;</span>)
   ),
 )(Route)

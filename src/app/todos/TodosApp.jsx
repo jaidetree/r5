@@ -1,7 +1,7 @@
 import React from "react"
 import styled from "styled-components"
 
-import Todos from './containers/Todos'
+import Todos from "./containers/Todos"
 import Link from "app/main/components/link"
 
 const Title = styled.h1`
@@ -16,9 +16,9 @@ export default function TodosApp (props) {
         R5 Todos App
       </Title>
       <Todos />
-      <Link href="/">Home</Link>
+      <Link href="/todo/5/">Home</Link>
     </section>
-  );
+  )
 }
 
-TodosApp.displayName = 'TodosApp';
+TodosApp.displayName = "TodosApp"

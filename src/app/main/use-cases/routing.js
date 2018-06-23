@@ -1,11 +1,10 @@
 import {
-  always,
   apply,
-  map as amap,
+  compose,
+  equals,
+  not,
   path,
   pipe,
-  propEq,
-  pathEq,
   reverse,
 } from "ramda"
 
@@ -15,15 +14,12 @@ import {
 } from "rxjs"
 
 import {
-  combineLatest,
   filter,
-  flatMap,
   ignoreElements,
   map,
   pluck,
   switchMap,
   switchMapTo,
-  takeUntil,
   tap,
   withLatestFrom,
 } from "rxjs/operators"
@@ -36,23 +32,27 @@ import {
   reducers,
 } from "lib/useCase"
 
-import { parseRoutes } from "app/main/lib/router"
+import { diffViews, parseRoutes } from "app/main/lib/router"
 
 import { INITIALIZE } from "app/main/store/initialize"
 
 // Actions
 // ---------------------------------------------------------------------------
 export const actions = {
+  START_LOADING: "routing/loading/start",
+  STOP_LOADING: "routing/loading/stop",
+
+  SET_ROUTES: "routing/routes/set",
+
+  NAVIGATE: "routing/url/navigate",
+  ROUTE: "routing/url/route",
+
   APPEND_VIEW: "routing/views/append",
   CLEANUP_VIEW: "routing/view/cleanup",
   INIT_VIEW: "routing/view/init",
   LOADED_VIEW: "routing/view/loaded",
-  NAVIGATE: "routing/url/navigate",
   REMOVE_VIEW: "routing/views/remove",
-  ROUTE: "routing/url/route",
-  SET_ROUTES: "routing/routes/set",
-  START_LOADING: "routing/loading/start",
-  STOP_LOADING: "routing/loading/stop",
+  UPDATE_VIEW: "routing/views/update",
 }
 
 export const ROUTE = actions.ROUTE
@@ -69,7 +69,8 @@ export const reducer = combineReducers({
   }),
   views: createReducer({
     init: [],
-    [actions.APPEND_VIEW]: reducers.updateOrCreateByKey("name"),
+    [actions.APPEND_VIEW]: reducers.append,
+    [actions.UPDATE_VIEW]: reducers.mergeDeepByKey("name"),
     [actions.REMOVE_VIEW]: reducers.removeByKey("name"),
   }),
   loading: createReducer({
@@ -111,7 +112,6 @@ function initializeEpic (action$) {
   return action$
     .ofType(INITIALIZE)
     .pipe(
-      tap(log("receiving routes")),
       pluck("data", "routes"),
       map(parseRoutes),
       map(createAction(actions.SET_ROUTES)),
@@ -150,10 +150,19 @@ function routingEpic (action$, state$, { router }) {
     .pipe(
       pluck("data"),
       withLatestFrom(state$.pipe(
-        map(path([ "routing", "routes" ]))
+        map(select("routes"))
       )),
       switchMap(pipe(reverse, apply(router.routeToViews))),
-      map(createAction(actions.APPEND_VIEW))
+      withLatestFrom(state$.pipe(
+        map(select("views")),
+      )),
+      filter(apply(compose(not, equals))),
+      map(apply(diffViews)),
+      switchMap(diff => merge(
+        from(diff.removed || []).pipe(map(createAction(actions.REMOVE_VIEW))),
+        from(diff.added || []).pipe(map(createAction(actions.APPEND_VIEW))),
+        from(diff.changed || []).pipe(map(createAction(actions.UPDATE_VIEW))),
+      )),
     )
 
 
@@ -166,3 +175,7 @@ export const epic = combineEpics(
   routingEpic,
   startLoadingViewEpic,
 )
+
+function select (...paths) {
+  return path([ "routing", ...paths ])
+}

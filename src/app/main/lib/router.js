@@ -1,12 +1,12 @@
 import * as R from "ramda"
 import { from, fromEvent, BehaviorSubject } from "rxjs"
-import { filter, map } from "rxjs/operators"
+import { filter, map, toArray } from "rxjs/operators"
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g
 const NUM_PATTERN = /^\d+(\.\d+)?$/g
 
 /**
- * createRouter :: { a  -> { route$: Observable, navigate: (String, { b }) -> void, unsubscribe: () -> void }}
+ * createRouter :: { a  -> { Router }}
  * Create a router object instance for reacting to URL changes and pushing
  * new state.
  */
@@ -42,6 +42,8 @@ export function createRouter (config={}) {
             params: getArgsFromURL(route, location),
             name: route.name,
           })),
+          // collect them all as an array to compare against current views
+          toArray(),
         )
     },
 
@@ -61,6 +63,32 @@ export function createRouter (config={}) {
       return route$.unsubscribe()
     },
   }
+}
+
+export function diffViews (next, prev) {
+  const getNames = R.pluck("name")
+  const nextNames = getNames(next)
+  const prevNames = getNames(prev)
+  const isIn = R.curry((views, view) => views.includes(view.name))
+  const isNotIn = R.complement(isIn)
+  const byName = R.propEq("name")
+  const isChanged = R.allPass([
+    isIn(prevNames),
+    R.contains(R.__, next),
+    view => !R.equals(
+      next.find(byName(view.name)),
+      prev.find(byName(view.name)),
+    ),
+  ])
+
+  return next
+    |> R.union(prev)
+    |> R.groupBy(R.cond([
+      [ isNotIn(prevNames), R.always("added") ],
+      [ isNotIn(nextNames), R.always("removed") ],
+      [ isChanged, R.always("changed") ],
+      [ R.T, R.always("ignored") ],
+    ]))
 }
 
 /**

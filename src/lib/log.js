@@ -26,15 +26,20 @@ export default function log (label, ...extra) {
   }
 }
 
-log.spy = function spy (label, fn) {
+log.spy = function spy (label, methodName, fn) {
+  if (typeof label === "function" || typeof methodName === "function") {
+    fn = methodName || label
+    return spy(fn.name || "<anonymous>", "log", fn)
+  }
+
   return (...input) => {
     if (window.R5.DEBUG && window && window.console) {
-      console.trace(label + ".input", ...input)
+      console[methodName](label + ".input", ...input)
     }
     const output = fn(...input)
 
     if (window.R5.DEBUG && window && window.console) {
-      console.trace(label + ".output", output)
+      console[methodName](label + ".output", output)
     }
 
     return output
