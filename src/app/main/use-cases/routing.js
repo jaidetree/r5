@@ -139,7 +139,7 @@ function navigateEpic (action$, state$, { router$ }) {
     )
 }
 
-function routingEpic (action$, state$) {
+function routeEpic (action$, state$) {
   return action$
     .ofType(actions.ROUTE)
     .pipe(
@@ -181,7 +181,7 @@ export const epic = combineEpics(
   changeUrlEpic,
   initializeEpic,
   navigateEpic,
-  routingEpic,
+  routeEpic,
   startLoadingViewEpic,
   updateViewsEpic,
 )
