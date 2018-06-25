@@ -1,5 +1,5 @@
 import * as R from "ramda"
-import { from, fromEvent, BehaviorSubject } from "rxjs"
+import { empty, from, fromEvent, BehaviorSubject } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g
@@ -72,7 +72,7 @@ export function diffViews (next, prev) {
   const isIn = R.curry((views, view) => views.includes(view.name))
   const isNotIn = R.complement(isIn)
   const byName = R.propEq("name")
-  const isChanged = R.allPass([
+  const isUpdated = R.allPass([
     isIn(prevNames),
     R.contains(R.__, next),
     view => !R.equals(
@@ -84,11 +84,17 @@ export function diffViews (next, prev) {
   return next
     |> R.union(prev)
     |> R.groupBy(R.cond([
-      [ isNotIn(prevNames), R.always("added") ],
-      [ isNotIn(nextNames), R.always("removed") ],
-      [ isChanged, R.always("changed") ],
-      [ R.T, R.always("ignored") ],
+      [ isNotIn(prevNames), R.always("added$") ],
+      [ isNotIn(nextNames), R.always("removed$") ],
+      [ isUpdated, R.always("updated$") ],
+      [ R.T, R.always("ignored$") ],
     ]))
+    |> R.map(from)
+    |> R.merge({
+      added$: empty(),
+      removed$: empty(),
+      updated$: empty(),
+    })
 }
 
 /**

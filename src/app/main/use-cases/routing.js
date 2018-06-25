@@ -159,9 +159,9 @@ function routingEpic (action$, state$, { router }) {
       filter(apply(compose(not, equals))),
       map(apply(diffViews)),
       switchMap(diff => merge(
-        from(diff.removed || []).pipe(map(createAction(actions.REMOVE_VIEW))),
-        from(diff.added || []).pipe(map(createAction(actions.APPEND_VIEW))),
-        from(diff.changed || []).pipe(map(createAction(actions.UPDATE_VIEW))),
+        diff.removed$.pipe(map(createAction(actions.REMOVE_VIEW))),
+        diff.added$.pipe(map(createAction(actions.APPEND_VIEW))),
+        diff.updated$.pipe(map(createAction(actions.UPDATE_VIEW))),
       )),
     )
 
