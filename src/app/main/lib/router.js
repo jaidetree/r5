@@ -65,13 +65,34 @@ export function createRouter (config={}) {
   }
 }
 
+// diffViews: View a, Observable Obs  => ([a], [a]) -> { added$: Obs[a], removed$: Obs[a], updated$: Obs[a] }
+// Takes a list of incoming views and a list of previous views then groups
+// them into an object of streams.
+// diff = diffViews([ { name: "todo" } ], [ { name: "todos" } ])
+// diff.addded$ - Stream of views that were added
+// diff.removed$ - Stream of views that were removed
+// diff.updated$ - Stream of views that were updated
 export function diffViews (next, prev) {
+  // Create a list of view names for easier lookups
   const getNames = R.pluck("name")
   const nextNames = getNames(next)
   const prevNames = getNames(prev)
-  const isIn = R.curry((views, view) => views.includes(view.name))
+
+  // isIn :: [ String ] -> { name: String } -> Boolean
+  // test if a view's name exists in a list of names
+  const isIn = R.curry((viewNames, view) => viewNames.includes(view.name))
+
+  // isNotIn :: [ String ] -> { name: String } -> Boolean
+  // test if a view's name does not exist in a list of names
   const isNotIn = R.complement(isIn)
+
+  // byName :: String -> { name: String } -> Boolean
+  // Test if the name of an object matches an expected string value. Returns
+  // true or false.
   const byName = R.propEq("name")
+
+  // isUpdated :: { name: String, query: {}, params: {} } -> Boolean
+  // Test if
   const isUpdated = R.allPass([
     isIn(prevNames),
     R.contains(R.__, next),
@@ -82,14 +103,19 @@ export function diffViews (next, prev) {
   ])
 
   return next
+    // join with previous views but ensure unique elements
     |> R.union(prev)
+    // group views into added, removed$, updated$, or ignored$ arrays
     |> R.groupBy(R.cond([
       [ isNotIn(prevNames), R.always("added$") ],
       [ isNotIn(nextNames), R.always("removed$") ],
       [ isUpdated, R.always("updated$") ],
       [ R.T, R.always("ignored$") ],
     ]))
+    // transform each group into a stream
     |> R.map(from)
+    // merge with default empty streams to make consumption easier & more
+    // deterministic
     |> R.merge({
       added$: empty(),
       removed$: empty(),
