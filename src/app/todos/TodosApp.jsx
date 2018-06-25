@@ -16,7 +16,7 @@ export default function TodosApp (props) {
         R5 Todos App
       </Title>
       <Todos />
-      <Link href="/todo/5/">Home</Link>
+      <Link href="/todo/5">Home</Link>
     </section>
   )
 }

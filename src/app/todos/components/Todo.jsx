@@ -1,5 +1,6 @@
 import React from "react"
 import styled from "styled-components"
+import deleteIcon from "../assets/delete.svg"
 
 const Task = styled.li`
   display: flex;
@@ -22,10 +23,14 @@ const TaskDescription = styled.label`
 
 const Remove = styled.button`
   border: none;
-  background: none;
+  background: url(${deleteIcon}) no-repeat 50% 50%;
   cursor: pointer;
   outline: none;
   line-height: 2.25;
+  width: 24px;
+  height: 24px;
+  text-indent: -999px;
+  overflow: hidden;
 `
 
 export default function Todo (props) {
@@ -48,7 +53,7 @@ export default function Todo (props) {
       <TaskDescription className="todo__task" htmlFor={id} completed={props.todo.completed}>
         {props.todo.task}
       </TaskDescription>
-      <Remove type="button" onClick={props.onClickRemove} value={props.todo.id}>❌</Remove>
+      <Remove type="button" onClick={props.onClickRemove} value={props.todo.id}>Delete</Remove>
     </Task>
   )
 }
