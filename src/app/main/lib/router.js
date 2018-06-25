@@ -168,10 +168,14 @@ export function parseQueryString (qs) {
 
   return qs
     |> R.replace(/^\?/, "")
+    // split into list of [ "key=value" ] strings
     |> R.split("&")
     |> R.map(R.pipe(
+      // decode url-safe string into actual characters
+      decodeURIComponent,
+      // split each "key=value" into pair of  [ "key", "value" ]
       R.split("="),
-      R.map(decodeURIComponent),
+      // parse expected value types
       R.cond([
         [ valueEquals("true"),  setValue(true) ],
         [ valueEquals("false"), setValue(false) ],
@@ -180,7 +184,9 @@ export function parseQueryString (qs) {
         [ R.T, R.identity ],
       ]),
     ))
+    // remove any items that don't have a valid "key" in the pair
     |> R.filter(R.head)
+    // create an object from array of pairs
     |> R.fromPairs
 }
 
