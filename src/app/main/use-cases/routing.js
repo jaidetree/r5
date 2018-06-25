@@ -110,6 +110,15 @@ export function stopLoading (name) {
 
 // Epics
 // ---------------------------------------------------------------------------
+function changeUrlEpic (action$, state$, { router$ }) {
+  return action$
+    .ofType(actions.SET_ROUTES)
+    .pipe(
+      switchMapTo(router$),
+      map(createAction(actions.ROUTE))
+    )
+}
+
 function initializeEpic (action$) {
   return action$
     .ofType(INITIALIZE)
@@ -130,24 +139,6 @@ function navigateEpic (action$, state$, { router$ }) {
     )
 }
 
-function changeUrlEpic (action$, state$, { router$ }) {
-  return action$
-    .ofType(actions.SET_ROUTES)
-    .pipe(
-      switchMapTo(router$),
-      map(createAction(actions.ROUTE))
-    )
-}
-
-function startLoadingViewEpic (action$) {
-  return action$
-    .ofType(actions.INIT_VIEW)
-    .pipe(
-      pluck("data"),
-      map(startLoading),
-    )
-}
-
 function routingEpic (action$, state$) {
   return action$
     .ofType(actions.ROUTE)
@@ -158,6 +149,15 @@ function routingEpic (action$, state$) {
       )),
       switchMap(pipe(reverse, apply(routeToViews))),
       map(createAction(actions.UPDATE_VIEWS))
+    )
+}
+
+function startLoadingViewEpic (action$) {
+  return action$
+    .ofType(actions.INIT_VIEW)
+    .pipe(
+      pluck("data"),
+      map(startLoading),
     )
 }
 
