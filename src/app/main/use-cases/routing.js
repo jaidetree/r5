@@ -51,8 +51,10 @@ export const actions = {
   CLEANUP_VIEW: "routing/view/cleanup",
   INIT_VIEW: "routing/view/init",
   LOADED_VIEW: "routing/view/loaded",
-  REMOVE_VIEW: "routing/views/remove",
-  UPDATE_VIEW: "routing/views/update",
+
+  REMOVE_VIEW: "routing/views/view/remove",
+  UPDATE_VIEW: "routing/views/view/update",
+  UPDATE_VIEWS: "routing/views/update",
 }
 
 export const ROUTE = actions.ROUTE
@@ -128,6 +130,15 @@ function navigateEpic (action$, state$, { router$ }) {
     )
 }
 
+function changeUrlEpic (action$, state$, { router$ }) {
+  return action$
+    .ofType(actions.SET_ROUTES)
+    .pipe(
+      switchMapTo(router$),
+      map(createAction(actions.ROUTE))
+    )
+}
+
 function startLoadingViewEpic (action$) {
   return action$
     .ofType(actions.INIT_VIEW)
@@ -137,15 +148,8 @@ function startLoadingViewEpic (action$) {
     )
 }
 
-function routingEpic (action$, state$, { router$ }) {
-  const requestEpic = action$
-    .ofType(actions.SET_ROUTES)
-    .pipe(
-      switchMapTo(router$),
-      map(createAction(actions.ROUTE)),
-    )
-
-  const responseEpic = action$
+function routingEpic (action$, state$) {
+  return action$
     .ofType(actions.ROUTE)
     .pipe(
       pluck("data"),
@@ -153,27 +157,33 @@ function routingEpic (action$, state$, { router$ }) {
         map(select("routes"))
       )),
       switchMap(pipe(reverse, apply(routeToViews))),
-      withLatestFrom(state$.pipe(
-        map(select("views")),
-      )),
+      map(createAction(actions.UPDATE_VIEWS))
+    )
+}
+
+function updateViewsEpic (action$, state$) {
+  return action$
+    .ofType(actions.UPDATE_VIEWS)
+    .pipe(
+      pluck("data"),
+      withLatestFrom(state$.pipe(map(select("views")))),
       filter(apply(compose(not, equals))),
       map(apply(diffViews)),
       switchMap(diff => merge(
         diff.removed$.pipe(map(createAction(actions.REMOVE_VIEW))),
         diff.added$.pipe(map(createAction(actions.APPEND_VIEW))),
         diff.updated$.pipe(map(createAction(actions.UPDATE_VIEW))),
-      )),
+      ))
     )
-
-
-  return merge(requestEpic, responseEpic)
 }
 
 export const epic = combineEpics(
+  changeUrlEpic,
   initializeEpic,
   navigateEpic,
   routingEpic,
   startLoadingViewEpic,
+  updateViewsEpic,
 )
 
 function select (...paths) {
