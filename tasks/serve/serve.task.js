@@ -15,10 +15,17 @@ gulp.task("serve", () => {
       baseDir: "public",
       middleware: [
         webpackDevMiddleware(bundler, {
-          publicPath: webpackConfig.output.publicPath,
+          publicPath: "/",
           stats: { colors: true },
         }),
         webpackHotMiddleware(bundler),
+        (req, res, next) => {
+          // remove trailing slash from requests
+          req.url = req.url.endsWith("/") && req.url.length > 1
+            ? req.url.slice(0, -1)
+            : req.url
+          next()
+        },
         (req, res, next) => {
           const url = URL.parse(req.url)
 
