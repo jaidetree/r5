@@ -32,7 +32,7 @@ import {
   reducers,
 } from "lib/useCase"
 
-import { diffViews, parseRoutes } from "app/main/lib/router"
+import { diffViews, parseRoutes, routeToViews } from "app/main/lib/router"
 
 import { INITIALIZE } from "app/main/store/initialize"
 
@@ -118,12 +118,12 @@ function initializeEpic (action$) {
     )
 }
 
-function navigateEpic (action$, state$, { router }) {
+function navigateEpic (action$, state$, { router$ }) {
   return action$
     .ofType(actions.NAVIGATE)
     .pipe(
       pluck("data"),
-      tap(route => router.navigate(route.url, route.opts)),
+      tap(route => router$.navigate(route.url, route.opts)),
       ignoreElements(),
     )
 }
@@ -137,11 +137,11 @@ function startLoadingViewEpic (action$) {
     )
 }
 
-function routingEpic (action$, state$, { router }) {
+function routingEpic (action$, state$, { router$ }) {
   const requestEpic = action$
     .ofType(actions.SET_ROUTES)
     .pipe(
-      switchMapTo(router.route$),
+      switchMapTo(router$),
       map(createAction(actions.ROUTE)),
     )
 
@@ -152,7 +152,7 @@ function routingEpic (action$, state$, { router }) {
       withLatestFrom(state$.pipe(
         map(select("routes"))
       )),
-      switchMap(pipe(reverse, apply(router.routeToViews))),
+      switchMap(pipe(reverse, apply(routeToViews))),
       withLatestFrom(state$.pipe(
         map(select("views")),
       )),

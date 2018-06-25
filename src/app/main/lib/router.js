@@ -1,9 +1,14 @@
 import * as R from "ramda"
-import { empty, from, fromEvent, BehaviorSubject } from "rxjs"
+import { observable, empty, from, fromEvent, BehaviorSubject } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g
 const NUM_PATTERN = /^\d+(\.\d+)?$/g
+
+class Router {
+  navigate (url, opts) {
+  }
+}
 
 /**
  * createRouter :: { a  -> { Router }}
@@ -26,25 +31,13 @@ export function createRouter (config={}) {
     )
     .subscribe(url => route$.next(url))
 
+  // create an observable-compatible interface for working with routes
   return {
     route$,
 
-    routeToViews (routes, location) {
-      return from(routes)
-        .pipe(
-          // test to see if route matches location, keep only those that pass
-          filter(route => isRouteHit(route, location)),
-          // build a data structure we can use to render views and fetch
-          // required data from the server
-          map(route => ({
-            path: location.path,
-            query: location.query,
-            params: getArgsFromURL(route, location),
-            name: route.name,
-          })),
-          // collect them all as an array to compare against current views
-          toArray(),
-        )
+    // make this interface compatible with utils that expect observables
+    [observable]: function observable () {
+      return this
     },
 
     // Push or replace URL state
@@ -56,6 +49,18 @@ export function createRouter (config={}) {
       return route$.next(getURL())
     },
 
+    next (uri) {
+      return this.navigate(uri, {})
+    },
+
+    pipe (...args) {
+      return route$.pipe(...args)
+    },
+
+    subscribe (...args) {
+      return route$.subscribe(...args)
+    },
+
     // End route streams and dispose subscribers
     unsubscribe () {
       route$.complete()
@@ -64,6 +69,44 @@ export function createRouter (config={}) {
     },
   }
 }
+
+// routeToViews :: [ { ParsedRoute } ], { ParsedLocation } -> [ { View } ]
+// Takes a list of possible routes and a parsed location object and returns
+// a list of matching views
+// routeToViews(
+//   [
+//     { name: "todos", pattern: /^\/todos\/([^\/]+)/gi, args: ["id"] },
+//   ],
+//   { path: "/todos/5", query: { filter: "completed" } },
+// )
+// =>
+// [
+//   {
+//     name: "todos",
+//     params: { id: 5 },
+//     path: "/todos/5",
+//     query: { filter: "completed" }  ,
+//   }
+// ]
+//
+export function routeToViews (routes, location) {
+  return from(routes)
+    .pipe(
+      // test to see if route matches location, keep only those that pass
+      filter(route => isRouteHit(route, location)),
+      // build a data structure we can use to render views and fetch
+      // required data from the server
+      map(route => ({
+        name: route.name,
+        params: getArgsFromURL(route, location),
+        path: location.path,
+        query: location.query,
+      })),
+      // collect them all as an array to compare against current views
+      toArray(),
+    )
+}
+
 
 // diffViews: View a, Observable Obs  => ([a], [a]) -> { added$: Obs[a], removed$: Obs[a], updated$: Obs[a] }
 // Takes a list of incoming views and a list of previous views then groups
