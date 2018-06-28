@@ -2,6 +2,7 @@ import React from "react"
 import styled from "styled-components"
 
 import Todo from "./Todo"
+import classNames from "../todos.scss"
 
 const Wrapper = styled.section`
   width: 37.5rem;
@@ -15,7 +16,7 @@ const TodoList = styled.ul`
 
 export default function Todos (props) {
   return (
-    <Wrapper className="todos">
+    <Wrapper className={classNames.todos}>
       <TodoList className="todos__list">
         {props.todos.map(todo => (
           <Todo
@@ -26,6 +27,9 @@ export default function Todos (props) {
           />
         ))}
       </TodoList>
+      <button className={classNames.add}>
+        Add
+      </button>
     </Wrapper>
   )
 }

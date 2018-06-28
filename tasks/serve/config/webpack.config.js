@@ -1,5 +1,6 @@
 import path from "path"
 import webpack from "webpack"
+import SpritesmithPlugin from "webpack-spritesmith"
 
 const inlineFileSizeLimit = 4096
 const assetPath = path.join(process.cwd(), "public", "assets")
@@ -94,10 +95,39 @@ export default {
             }
           }
         ]
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          "style-loader",
+          {
+            loader: "css-loader",
+            options: {
+              camelCase: true,
+              minimize: true,
+              localIdentName: "[local]--[hash:base64:5]",
+              modules: true,
+            },
+          },
+          "sass-loader",
+        ]
       }
     ],
   },
   plugins: [
+    new SpritesmithPlugin({
+      src: {
+        cwd: path.resolve(process.cwd(), "src"),
+        glob: "**/sprites/**/*.png"
+      },
+      target: {
+        image: path.resolve(process.cwd(), "src/assets/sprite.png"),
+        css: path.resolve(process.cwd(), "src/assets/sprite.scss"),
+      },
+      apiOptions: {
+        cssImageRef: "assets/sprite.png"
+      }
+    }),
     new webpack.HotModuleReplacementPlugin(),
   ],
 }

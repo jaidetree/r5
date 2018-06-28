@@ -1,0 +1,18 @@
+@import "assets/sprite.scss";
+
+.todos {
+  border: 1px solid #e5e5e5;
+  padding: 20px;
+}
+.add {
+  position: relative;
+  appearance: none;
+  line-height: 2rem;
+  &:before {
+    display: inline-block;
+    margin-right: 0.25rem;
+    @include sprite($add);
+    content: '';
+    vertical-align: middle;
+  }
+}
