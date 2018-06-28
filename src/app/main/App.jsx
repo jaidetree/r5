@@ -25,10 +25,10 @@ export default class App extends React.Component {
 
   constructor (props) {
     super(props)
-    this.state.router = createRouter({})
+    this.state.router$ = createRouter({})
     this.state.store = createStore(reducer, epic, {}, {
       dependencies: {
-        router: this.state.router,
+        router$: this.state.router$,
         request,
         window,
       },

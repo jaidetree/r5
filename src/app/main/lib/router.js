@@ -1,9 +1,14 @@
 import * as R from "ramda"
-import { from, fromEvent, BehaviorSubject } from "rxjs"
+import { observable, empty, from, fromEvent, BehaviorSubject } from "rxjs"
 import { filter, map, toArray } from "rxjs/operators"
 
 const ARG_PATTERN = /(\/:[_a-zA-Z0-9]+)/g
 const NUM_PATTERN = /^\d+(\.\d+)?$/g
+
+class Router {
+  navigate (url, opts) {
+  }
+}
 
 /**
  * createRouter :: { a  -> { Router }}
@@ -26,25 +31,13 @@ export function createRouter (config={}) {
     )
     .subscribe(url => route$.next(url))
 
+  // create an observable-compatible interface for working with routes
   return {
     route$,
 
-    routeToViews (routes, location) {
-      return from(routes)
-        .pipe(
-          // test to see if route matches location, keep only those that pass
-          filter(route => isRouteHit(route, location)),
-          // build a data structure we can use to render views and fetch
-          // required data from the server
-          map(route => ({
-            path: location.path,
-            query: location.query,
-            params: getArgsFromURL(route, location),
-            name: route.name,
-          })),
-          // collect them all as an array to compare against current views
-          toArray(),
-        )
+    // make this interface compatible with utils that expect observables
+    [observable]: function observable () {
+      return this
     },
 
     // Push or replace URL state
@@ -56,6 +49,18 @@ export function createRouter (config={}) {
       return route$.next(getURL())
     },
 
+    next (uri) {
+      return this.navigate(uri, {})
+    },
+
+    pipe (...args) {
+      return route$.pipe(...args)
+    },
+
+    subscribe (...args) {
+      return route$.subscribe(...args)
+    },
+
     // End route streams and dispose subscribers
     unsubscribe () {
       route$.complete()
@@ -65,14 +70,73 @@ export function createRouter (config={}) {
   }
 }
 
+// routeToViews :: [ { ParsedRoute } ], { ParsedLocation } -> [ { View } ]
+// Takes a list of possible routes and a parsed location object and returns
+// a list of matching views
+// routeToViews(
+//   [
+//     { name: "todos", pattern: /^\/todos\/([^\/]+)/gi, args: ["id"] },
+//   ],
+//   { path: "/todos/5", query: { filter: "completed" } },
+// )
+// =>
+// [
+//   {
+//     name: "todos",
+//     params: { id: 5 },
+//     path: "/todos/5",
+//     query: { filter: "completed" }  ,
+//   }
+// ]
+//
+export function routeToViews (routes, location) {
+  return from(routes)
+    .pipe(
+      // test to see if route matches location, keep only those that pass
+      filter(route => isRouteHit(route, location)),
+      // build a data structure we can use to render views and fetch
+      // required data from the server
+      map(route => ({
+        name: route.name,
+        params: getArgsFromURL(route, location),
+        path: location.path,
+        query: location.query,
+      })),
+      // collect them all as an array to compare against current views
+      toArray(),
+    )
+}
+
+
+// diffViews: View a, Observable Obs  => ([a], [a]) -> { added$: Obs[a], removed$: Obs[a], updated$: Obs[a] }
+// Takes a list of incoming views and a list of previous views then groups
+// them into an object of streams.
+// diff = diffViews([ { name: "todo" } ], [ { name: "todos" } ])
+// diff.addded$ - Stream of views that were added
+// diff.removed$ - Stream of views that were removed
+// diff.updated$ - Stream of views that were updated
 export function diffViews (next, prev) {
+  // Create a list of view names for easier lookups
   const getNames = R.pluck("name")
   const nextNames = getNames(next)
   const prevNames = getNames(prev)
-  const isIn = R.curry((views, view) => views.includes(view.name))
+
+  // isIn :: [ String ] -> { name: String } -> Boolean
+  // test if a view's name exists in a list of names
+  const isIn = R.curry((viewNames, view) => viewNames.includes(view.name))
+
+  // isNotIn :: [ String ] -> { name: String } -> Boolean
+  // test if a view's name does not exist in a list of names
   const isNotIn = R.complement(isIn)
+
+  // byName :: String -> { name: String } -> Boolean
+  // Test if the name of an object matches an expected string value. Returns
+  // true or false.
   const byName = R.propEq("name")
-  const isChanged = R.allPass([
+
+  // isUpdated :: { name: String, query: {}, params: {} } -> Boolean
+  // Test if
+  const isUpdated = R.allPass([
     isIn(prevNames),
     R.contains(R.__, next),
     view => !R.equals(
@@ -82,13 +146,24 @@ export function diffViews (next, prev) {
   ])
 
   return next
+    // join with previous views but ensure unique elements
     |> R.union(prev)
+    // group views into added, removed$, updated$, or ignored$ arrays
     |> R.groupBy(R.cond([
-      [ isNotIn(prevNames), R.always("added") ],
-      [ isNotIn(nextNames), R.always("removed") ],
-      [ isChanged, R.always("changed") ],
-      [ R.T, R.always("ignored") ],
+      [ isNotIn(prevNames), R.always("added$") ],
+      [ isNotIn(nextNames), R.always("removed$") ],
+      [ isUpdated, R.always("updated$") ],
+      [ R.T, R.always("ignored$") ],
     ]))
+    // transform each group into a stream
+    |> R.map(from)
+    // merge with default empty streams to make consumption easier & more
+    // deterministic
+    |> R.merge({
+      added$: empty(),
+      removed$: empty(),
+      updated$: empty(),
+    })
 }
 
 /**
@@ -136,10 +211,14 @@ export function parseQueryString (qs) {
 
   return qs
     |> R.replace(/^\?/, "")
+    // split into list of [ "key=value" ] strings
     |> R.split("&")
     |> R.map(R.pipe(
+      // decode url-safe string into actual characters
+      decodeURIComponent,
+      // split each "key=value" into pair of  [ "key", "value" ]
       R.split("="),
-      R.map(decodeURIComponent),
+      // parse expected value types
       R.cond([
         [ valueEquals("true"),  setValue(true) ],
         [ valueEquals("false"), setValue(false) ],
@@ -148,7 +227,9 @@ export function parseQueryString (qs) {
         [ R.T, R.identity ],
       ]),
     ))
+    // remove any items that don't have a valid "key" in the pair
     |> R.filter(R.head)
+    // create an object from array of pairs
     |> R.fromPairs
 }
 

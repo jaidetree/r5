@@ -32,7 +32,7 @@ import {
   reducers,
 } from "lib/useCase"
 
-import { diffViews, parseRoutes } from "app/main/lib/router"
+import { diffViews, parseRoutes, routeToViews } from "app/main/lib/router"
 
 import { INITIALIZE } from "app/main/store/initialize"
 
@@ -51,8 +51,10 @@ export const actions = {
   CLEANUP_VIEW: "routing/view/cleanup",
   INIT_VIEW: "routing/view/init",
   LOADED_VIEW: "routing/view/loaded",
-  REMOVE_VIEW: "routing/views/remove",
-  UPDATE_VIEW: "routing/views/update",
+
+  REMOVE_VIEW: "routing/views/view/remove",
+  UPDATE_VIEW: "routing/views/view/update",
+  UPDATE_VIEWS: "routing/views/update",
 }
 
 export const ROUTE = actions.ROUTE
@@ -108,6 +110,15 @@ export function stopLoading (name) {
 
 // Epics
 // ---------------------------------------------------------------------------
+function changeUrlEpic (action$, state$, { router$ }) {
+  return action$
+    .ofType(actions.SET_ROUTES)
+    .pipe(
+      switchMapTo(router$),
+      map(createAction(actions.ROUTE))
+    )
+}
+
 function initializeEpic (action$) {
   return action$
     .ofType(INITIALIZE)
@@ -118,13 +129,26 @@ function initializeEpic (action$) {
     )
 }
 
-function navigateEpic (action$, state$, { router }) {
+function navigateEpic (action$, state$, { router$ }) {
   return action$
     .ofType(actions.NAVIGATE)
     .pipe(
       pluck("data"),
-      tap(route => router.navigate(route.url, route.opts)),
+      tap(route => router$.navigate(route.url, route.opts)),
       ignoreElements(),
+    )
+}
+
+function routeEpic (action$, state$) {
+  return action$
+    .ofType(actions.ROUTE)
+    .pipe(
+      pluck("data"),
+      withLatestFrom(state$.pipe(
+        map(select("routes"))
+      )),
+      switchMap(pipe(reverse, apply(routeToViews))),
+      map(createAction(actions.UPDATE_VIEWS))
     )
 }
 
@@ -137,43 +161,29 @@ function startLoadingViewEpic (action$) {
     )
 }
 
-function routingEpic (action$, state$, { router }) {
-  const requestEpic = action$
-    .ofType(actions.SET_ROUTES)
-    .pipe(
-      switchMapTo(router.route$),
-      map(createAction(actions.ROUTE)),
-    )
-
-  const responseEpic = action$
-    .ofType(actions.ROUTE)
+function updateViewsEpic (action$, state$) {
+  return action$
+    .ofType(actions.UPDATE_VIEWS)
     .pipe(
       pluck("data"),
-      withLatestFrom(state$.pipe(
-        map(select("routes"))
-      )),
-      switchMap(pipe(reverse, apply(router.routeToViews))),
-      withLatestFrom(state$.pipe(
-        map(select("views")),
-      )),
+      withLatestFrom(state$.pipe(map(select("views")))),
       filter(apply(compose(not, equals))),
       map(apply(diffViews)),
       switchMap(diff => merge(
-        from(diff.removed || []).pipe(map(createAction(actions.REMOVE_VIEW))),
-        from(diff.added || []).pipe(map(createAction(actions.APPEND_VIEW))),
-        from(diff.changed || []).pipe(map(createAction(actions.UPDATE_VIEW))),
-      )),
+        diff.removed$.pipe(map(createAction(actions.REMOVE_VIEW))),
+        diff.added$.pipe(map(createAction(actions.APPEND_VIEW))),
+        diff.updated$.pipe(map(createAction(actions.UPDATE_VIEW))),
+      ))
     )
-
-
-  return merge(requestEpic, responseEpic)
 }
 
 export const epic = combineEpics(
+  changeUrlEpic,
   initializeEpic,
   navigateEpic,
-  routingEpic,
+  routeEpic,
   startLoadingViewEpic,
+  updateViewsEpic,
 )
 
 function select (...paths) {
