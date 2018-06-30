@@ -102,7 +102,8 @@ function getImageRule (config) {
 
 function getSVGRule (config) {
   return {
-    test: /\.(svg)(\?.*)?$/,
+    test: /\.svg(\?.*)?$/,
+    exclude: /sprites/,
     use: [
       {
         loader: "file-loader",
@@ -116,6 +117,21 @@ function getSVGRule (config) {
         loader: "image-webpack-loader",
       }
     ]
+  }
+}
+
+function getSVGSpriteRule (config) {
+  return {
+    test: /\.svg(\?.*)?$/,
+    include: /sprites/,
+    use: [
+      {
+        loader: "svg-sprite-loader",
+        options: {
+        },
+      },
+      "svgo-loader",
+    ],
   }
 }
 
@@ -214,6 +230,7 @@ export default {}
   |> appendWith([ "module", "rules" ], getBabelRule)
   |> appendWith([ "module", "rules" ], getImageRule)
   |> appendWith([ "module", "rules" ], getSVGRule)
+  |> appendWith([ "module", "rules" ], getSVGSpriteRule)
   |> appendWith([ "module", "rules" ], getMediaRule)
   |> appendWith([ "module", "rules" ], getFontRule)
   |> appendWith([ "module", "rules" ], getSCSSRule)

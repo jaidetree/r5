@@ -1,6 +1,8 @@
 import React from "react"
 import styled from "styled-components"
 import deleteIcon from "../assets/delete.svg"
+import removeIcon from "../assets/sprites/remove.svg"
+import classNames from "../todos.scss"
 
 const Task = styled.li`
   display: flex;
@@ -53,7 +55,9 @@ export default function Todo (props) {
       <TaskDescription className="todo__task" htmlFor={id} completed={props.todo.completed}>
         {props.todo.task}
       </TaskDescription>
-      <Remove type="button" onClick={props.onClickRemove} value={props.todo.id}>Delete</Remove>
+      <Remove type="button" onClick={props.onClickRemove} value={props.todo.id}>
+        Remove
+      </Remove>
     </Task>
   )
 }
