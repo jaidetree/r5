@@ -17,6 +17,7 @@ export default compose(
   withHandlers({
     onClickLink: props => e => {
       e.preventDefault()
+      debugger;
       props.router.navigate(props.href)
     },
   })

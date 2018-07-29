@@ -2,7 +2,7 @@ import React from "react"
 import styled from "styled-components"
 
 import Todos from "./containers/Todos"
-import Link from "app/main/components/link"
+import Link from "app/main/components/Link"
 
 const Title = styled.h1`
   font-size: 2rem;

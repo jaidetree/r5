@@ -30,6 +30,8 @@ import {
   createAction,
   createReducer,
   reducers,
+  INIT_VIEW,
+  CLEANUP_VIEW,
 } from "lib/useCase"
 
 import { diffViews, parseRoutes, routeToViews } from "app/main/lib/router"
@@ -48,8 +50,6 @@ export const actions = {
   ROUTE: "routing/url/route",
 
   APPEND_VIEW: "routing/views/append",
-  CLEANUP_VIEW: "routing/view/cleanup",
-  INIT_VIEW: "routing/view/init",
   LOADED_VIEW: "routing/view/loaded",
 
   REMOVE_VIEW: "routing/views/view/remove",
@@ -58,9 +58,7 @@ export const actions = {
 }
 
 export const ROUTE = actions.ROUTE
-export const INIT_VIEW = actions.INIT_VIEW
 export const LOADED_VIEW = actions.LOADED_VIEW
-export const CLEANUP_VIEW = actions.CLEANUP_VIEW
 
 // Reducer
 // ---------------------------------------------------------------------------
@@ -89,11 +87,11 @@ export const reducer = combineReducers({
 // ---------------------------------------------------------------------------
 
 export function initView (view) {
-  return { type: actions.INIT_VIEW, data: view }
+  return { type: INIT_VIEW, data: view }
 }
 
 export function cleanupView (view) {
-  return { type: actions.CLEANUP_VIEW, data: view }
+  return { type: CLEANUP_VIEW, data: view }
 }
 
 export function navigate (uri) {
@@ -154,7 +152,7 @@ function routeEpic (action$, state$) {
 
 function startLoadingViewEpic (action$) {
   return action$
-    .ofType(actions.INIT_VIEW)
+    .ofType(INIT_VIEW)
     .pipe(
       pluck("data"),
       map(startLoading),

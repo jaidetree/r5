@@ -10,4 +10,4 @@ window.R5 = {
   DEBUG: process.env.NODE_ENV === "development",
 }
 
-ReactDOM.render(<App />, document.getElementById("app"))
+window.app = ReactDOM.render(<App />, document.getElementById("app"))

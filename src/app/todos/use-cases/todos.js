@@ -1,14 +1,12 @@
 import * as R  from "ramda"
 import {
+  of,
+} from "rxjs"
+import {
   delay,
-  filter,
   flatMap,
   map,
   mapTo,
-  pluck,
-  switchMap,
-  startWith,
-  tap,
 } from "rxjs/operators"
 import * as todos from "app/todos/api"
 import { INIT_VIEW, stopLoading } from "app/main/use-cases/routing"
@@ -59,18 +57,8 @@ export function updateTask (data) {
 
 // Epic
 // ---------------------------------------------------------------------------
-function initEpic (action$, ...args) {
-  return action$
-    .ofType(INIT_VIEW)
-    .pipe(
-      pluck("data"),
-      filter(R.equals("todos")),
-      switchMap(() => todosEpic(action$, ...args)
-        .pipe(
-          startWith(createAction(actions.FETCH_TODOS, {})),
-        )
-      )
-    )
+function initEpic () {
+  return of(createAction(actions.FETCH_TODOS, {}))
 }
 
 function fetchEpic (action$) {
@@ -92,9 +80,8 @@ function stopLoadingEpic (action$) {
     )
 }
 
-export const epic = initEpic
-
-const todosEpic = combineEpics(
+export const epic = combineEpics(
+  initEpic,
   fetchEpic,
   stopLoadingEpic,
 )

@@ -48,7 +48,7 @@ export default class App extends React.Component {
 
   render () {
     return (
-      <RouterContext.Provider value={this.state.router}>
+      <RouterContext.Provider value={this.state.router$}>
         <Provider store={this.state.store}>
           <Router>
             <Route route="todos" component={TodosApp} />
